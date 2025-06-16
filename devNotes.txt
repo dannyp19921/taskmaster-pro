@@ -1,0 +1,7 @@
+
+-->TENTATIVT: 
+Hvilke avhengigheter er det vi installerer for prosjektet? 
+
+- 'frontend' inneholder: React/Vite + Tailwind osv. 
+- 'backend' inneholder: Express/Django/Flask + API 
+- Den ytre 'taskmaster-pro' inneholder: .git, README.md, prosjektroten 
