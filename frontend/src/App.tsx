@@ -6,7 +6,9 @@ import './index.css';
 
 function App() {
   return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold"></div>
+    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold">
+      Tailwind virker!
+    </div>
   );
 }
 
