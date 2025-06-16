@@ -1,8 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// import { useState } from 'react'
+// import reactLogo from './assets/react.svg'
+// import viteLogo from '/vite.svg'
+// import './App.css'
+import './index.css';
 
+function App() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold"></div>
+  );
+}
+
+export default App; 
+
+/*
 function App() {
   const [count, setCount] = useState(0)
 
@@ -33,3 +43,4 @@ function App() {
 }
 
 export default App
+*/
