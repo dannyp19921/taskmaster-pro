@@ -3,13 +3,14 @@
 // import viteLogo from '/vite.svg'
 // import './App.css'
 import './index.css';
+import LoginForm from './components/LoginForm';
 
 function App() {
-  return (
-    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold">
-      Tailwind virker!
-    </div>
-  );
+  return <LoginForm />;
+    
+    //<div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold">
+    //  Tailwind virker!
+    // </div>
 }
 
 export default App; 
