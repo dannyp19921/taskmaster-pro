@@ -1,7 +1,14 @@
+/* index.css */ 
 
-@tailwind base;
+@import "tailwindcss"; 
+
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
+
+/* body {
+  background-color: red;
+} */
 
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
