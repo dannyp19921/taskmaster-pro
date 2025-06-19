@@ -1,13 +1,7 @@
 // frontend/src/components/Dashboard.tsx 
 import React, { useState } from 'react'; 
-
-type Task = {
-    id: number; 
-    title: string; 
-    description: string; 
-    dueDate: string; 
-    completed: boolean; 
-};
+import type { Task } from '../types/Task'; 
+import TaskItem from './TaskItem';
 
 type Props = {
     onLogout: () => void; 
@@ -58,10 +52,27 @@ const Dashboard = ({ onLogout }: Props) => {
                 </button>
             </div>
         
-
             <ul className="space-y-4">
                 {tasks.map(task => (
-                    <li
+                    <TaskItem
+                        key={task.id}
+                        task={task}
+                        onToggle={toggleComplete}
+                        onDelete={deleteTask}
+                    />
+                ))}
+            </ul>
+      </div>
+    );
+};
+
+export default Dashboard; 
+
+// Test 
+
+/* KLADD: 
+
+<li
                         key={task.id}
                         className="bg-white p-4 rounded-xl shadow flex justify-between items-start"
                     >
@@ -91,17 +102,10 @@ const Dashboard = ({ onLogout }: Props) => {
                             </button>
                         </div>
                     </li>
-                ))}
-            </ul>
-      </div>
-    );
-};
 
-export default Dashboard; 
 
-// Test 
 
-/* KLADD: 
+
 
 const Dashboard = ({ onLogout }: Props) => {
     const [tasks, setTasks] = useState<Task[]>([
