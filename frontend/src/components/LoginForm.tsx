@@ -1,6 +1,7 @@
 // LoginForm.tsx 
-import axios from 'axios'; 
+import axios from '../api/axios'; 
 import React, { useState } from 'react'; 
+import { useNavigate } from 'react-router-dom'; 
 
 type Props = {
     onLogin: () => void; 
@@ -10,6 +11,7 @@ const LoginForm = ({ onLogin }: Props) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState(''); 
     const [message, setMessage] = useState(''); 
+    const navigate = useNavigate(); 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault(); 
@@ -28,6 +30,7 @@ const LoginForm = ({ onLogin }: Props) => {
             localStorage.setItem('token', token);  
             setMessage('Innlogging vellykket!'); 
             onLogin(); // calls the prop-function from App  
+            navigate('/dashboard'); 
             // We can save token in localStorage, e.g.: localStorage.setItem('token', token); 
         } catch (error: any) {      // Fail management 
             if (error.response) {
