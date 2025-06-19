@@ -23,13 +23,11 @@ const LoginForm = ({ onLogin }: Props) => {
                 password,
             }); 
 
-            // const { token } = response.data; 
             const token = response.data.token; 
             console.log('Token mottatt: ', token);
-
             localStorage.setItem('token', token);  
             setMessage('Innlogging vellykket!'); 
-            onLogin(); // calls the prop-function from App  
+            onLogin(); // sets isLoggedIn 
             navigate('/dashboard'); 
             // We can save token in localStorage, e.g.: localStorage.setItem('token', token); 
         } catch (error: any) {      // Fail management 
