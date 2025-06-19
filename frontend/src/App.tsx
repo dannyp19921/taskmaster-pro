@@ -1,21 +1,100 @@
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
-
 // App.tsx 
 import './index.css';
+import React, { useEffect, useState } from 'react'; 
 import LoginForm from './components/LoginForm';
+import Dashboard from './components/Dashboard';
+import axios from 'axios';
 
-function App() {
-  return <LoginForm />;
-    
-    //<div className="flex items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-blue-500 text-white text-3xl font-bold">
-    //  Tailwind virker!
-    // </div>
-}
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
-export default App; 
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('token'); 
+      if (!token) {
+        setIsLoggedIn(false); 
+        return; 
+      }
+
+      try {
+        const response = await axios.get('http://localhost:3000/api/verify', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }); 
+
+        if (response.status === 200) {
+          setIsLoggedIn(true); 
+        } else {
+          localStorage.removeItem('token'); 
+          setIsLoggedIn(false); 
+        }
+      } catch (err) {
+        localStorage.removeItem('token'); 
+        setIsLoggedIn(false); 
+      }
+    };
+
+    verifyToken(); // ✅ Kalles inne i useEffect
+  }, []);
+
+  return (
+    <div>
+      {isLoggedIn
+        ? <Dashboard onLogout={() => setIsLoggedIn(false)} />
+        : <LoginForm onLogin={() => setIsLoggedIn(true)} />}
+    </div>
+  );
+};
+
+export default App;
+ 
+
+
+/* 
+    const token = localStorage.getItem('token'); 
+    if (!token) {
+      setIsLoggedIn(false); 
+      return; 
+    }
+
+    try {
+      const response = await axios.get('http://localhost:3000/api/verify', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }); 
+
+      if (response.status === 200) {
+        setIsLoggedIn(true); 
+      } else {
+        localStorage.removeItem('token'); 
+        setIsLoggedIn(false); 
+      }
+    } catch (err) {
+      localStorage.removeItem('token'); 
+      setIsLoggedIn(false); 
+    }; 
+
+    verifyToken(); 
+  }, []);
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('token'); 
+    setIsLoggedIn(!!token); // true if token exists 
+  }, []);
+
+  return (
+    <div>
+      {isLoggedIn
+        ? <Dashboard onLogout={() => setIsLoggedIn(false)} />
+        : <LoginForm onLogin={() => setIsLoggedIn(true)} />}
+    </div>
+  );
+};
+
+export default App;  */
 
 /*
 function App() {

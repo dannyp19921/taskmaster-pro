@@ -2,7 +2,11 @@
 import axios from 'axios'; 
 import React, { useState } from 'react'; 
 
-const LoginForm = () => {
+type Props = {
+    onLogin: () => void; 
+};
+
+const LoginForm = ({ onLogin }: Props) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState(''); 
     const [message, setMessage] = useState(''); 
@@ -17,9 +21,13 @@ const LoginForm = () => {
                 password,
             }); 
 
-            const { token } = response.data; 
-            console.log('Token mottatt: ', token); 
+            // const { token } = response.data; 
+            const token = response.data.token; 
+            console.log('Token mottatt: ', token);
+
+            localStorage.setItem('token', token);  
             setMessage('Innlogging vellykket!'); 
+            onLogin(); // calls the prop-function from App  
             // We can save token in localStorage, e.g.: localStorage.setItem('token', token); 
         } catch (error: any) {      // Fail management 
             if (error.response) {

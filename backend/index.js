@@ -53,6 +53,28 @@ app.get('/api/ping', (req, res) => {
     res.json({ message: 'pong' });
 });
 
+// Validation of token 
+app.get('/api/verify', (req, res) => {
+    const authHeader = req.headers['authorization']; 
+
+    if (!authHeader) {
+        return res.status(401).json({ message: 'Manglende auth-header' });
+    }
+
+    const token = authHeader.split(' ')[1]; // "Bearer TOKEN"
+
+    if(!token) {
+        return res.status(401).json({ message: 'Token mangler' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+        res.json({ message: 'Token gyldig', userId: decoded.userId });
+    } catch (err) {
+        res.status(401).json({ message: 'Token ugyldig eller utløpt' }); 
+    }
+});
+
 // Start server 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`); // Use backticks to print the actual value, instead of the variable name  
