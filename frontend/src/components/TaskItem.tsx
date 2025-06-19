@@ -15,7 +15,7 @@ const TaskItem = ({ task, onToggle, onDelete }: Props) => {
             className="bg-white p-4 rounded-xl shadow flex justify-between items-start"
         >
             <div>
-                <h2 className={`teext-lg font-semibold ${task.completed ? 'line-through text-gray-500' : ''}`}>
+                <h2 className={`text-lg font-semibold ${task.completed ? 'line-through text-gray-500' : ''}`}>
                     {task.title}
                 </h2>
                 <p className="text-sm text-gray-600">{task.description}</p>
@@ -34,7 +34,7 @@ const TaskItem = ({ task, onToggle, onDelete }: Props) => {
                 </button>
                 <button
                     onClick={() => onDelete(task.id)}
-                    className="bg-red-500 text-white px-3 -py-1 rounded text-sm"
+                    className="bg-red-500 text-white px-3 py-1 rounded text-sm"
                 >
                     Slett 
                 </button>
@@ -42,6 +42,5 @@ const TaskItem = ({ task, onToggle, onDelete }: Props) => {
         </li>
     ); 
 };
-
 
 export default TaskItem; 
