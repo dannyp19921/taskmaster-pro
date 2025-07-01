@@ -1,8 +1,8 @@
 // /src/screens/TaskListScreen.tsx: 
 
-import { View, Text, FlatList, TouchableOpacity } from 'react-native'; 
+import { View, Text, FlatList, TouchableOpacity, Button } from 'react-native'; 
 
-export default function TaskListScreen() {
+export default function TaskListScreen({ navigation }: any) {
     // Dummy tasks 
     const tasks = [
         {id: '1', title: 'Kjøpe melk', dueDate: '2025-07-03', priority: 'High'},
@@ -32,6 +32,11 @@ export default function TaskListScreen() {
                         <Text style={{ color: '#666' }}>Prioritet: {item.priority}</Text>
                     </TouchableOpacity>
                 )}
+            />
+
+            <Button
+                title="Opprett ny oppgave"
+                onPress={() => navigation.navigate('CreateTask')}
             />
         </View>
     );
