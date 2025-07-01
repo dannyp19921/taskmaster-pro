@@ -2,16 +2,32 @@
 
 import { View, Text, TextInput, Button } from 'react-native'; 
 import { useState } from 'react'; 
+import { supabase } from '../services/supabase'; 
 
 export default function RegisterScreen({ navigation }: any) {
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
+        const { data, error } = await supabase.auth.signUp({
+            email, 
+            password, 
+        }); 
+
+        if (error) {
+            alert('Registrering feilet: ' + error.message);
+            return; 
+        }
+
+        alert('Regisrering vellykket! Sjekk e-post for bekreftelse');
+        navigation.navigate('Login'); 
+    };
+
+    /* const handleRegister = () => {
         console.log('Prøver å registrere:', email, password); 
         // Here we can later integrate Supabase or backend 
         navigation.navigate('TaskList'); 
-    }; 
+    }; */ 
 
     return (
         <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>

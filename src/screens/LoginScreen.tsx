@@ -2,16 +2,33 @@
 
 import { View, Text, TextInput, Button } from 'react-native'; 
 import { useState } from 'react'; 
+import { supabase } from '../services/supabase';
 
 export default function LoginScreen({ navigation }: any) {
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email, 
+            password, 
+        }); 
+
+        if (error) {
+            alert('Login feilet: ' + error.message); 
+            return; 
+        }
+
+        alert('Innlogging vellykket!'); 
+        navigation.navigate('TaskList'); 
+    };
+
+    /* const handleLogin = () => {
         console.log('Prøver å logge inn med', email, password); 
         // Here we shall integrate Supabase or backend later on
         navigation.navigate('TaskList'); 
-    };
+        };
+    */
 
     return (
         <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
