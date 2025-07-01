@@ -1,24 +1,24 @@
-// src/screens/LoginScreen.tsx: 
+// src/screens/RegisterScreen.tsx: 
 
 import { View, Text, TextInput, Button } from 'react-native'; 
 import { useState } from 'react'; 
 
-export default function LoginScreen({ navigation }: any) {
+export default function RegisterScreen({ navigation }: any) {
     const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState(''); 
 
-    const handleLogin = () => {
-        console.log('Prøver å logge inn med', email, password); 
-        // Here we shall integrate Supabase or backend later on
+    const handleRegister = () => {
+        console.log('Prøver å registrere:', email, password); 
+        // Here we can later integrate Supabase or backend 
         navigation.navigate('Home'); 
-    };
+    }; 
 
     return (
         <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
-            <Text style={{ fontSize: 24, marginBottom: 20}}>Logg inn</Text>
+            <Text style={{ fontSize: 24, marginBottom: 20 }}>Registrer deg</Text>
 
-            <TextInput
-                placeholder="E-post"
+            <TextInput 
+                placeholder="E-post" 
                 value={email}
                 onChangeText={setEmail}
                 style={{
@@ -30,8 +30,8 @@ export default function LoginScreen({ navigation }: any) {
                 }}
             />
 
-            <TextInput
-                placeholder="Passord"
+            <TextInput 
+                placeholder="Passord" 
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -44,12 +44,12 @@ export default function LoginScreen({ navigation }: any) {
                 }}
             />
 
-            <Button title="Logg inn" onPress={handleLogin} />
+            <Button title="Registrer" onPress={handleRegister} />
 
             <Button
-                title="Ny bruker? Registrer deg"
-                onPress={() => navigation.navigate('Register')}
+                title="Allerede bruker? Logg inn"
+                onPress={() => navigation.navigate('Login')}
             />
         </View>
-    );
+    ); 
 }
