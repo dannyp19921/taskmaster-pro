@@ -1,4 +1,4 @@
-// src/screens/RegisterScreen.tsx: 
+// /src/screens/RegisterScreen.tsx: 
 
 import { View, Text, TextInput, Button } from 'react-native'; 
 import { useState } from 'react'; 
@@ -10,7 +10,7 @@ export default function RegisterScreen({ navigation }: any) {
     const handleRegister = () => {
         console.log('Prøver å registrere:', email, password); 
         // Here we can later integrate Supabase or backend 
-        navigation.navigate('Home'); 
+        navigation.navigate('TaskList'); 
     }; 
 
     return (

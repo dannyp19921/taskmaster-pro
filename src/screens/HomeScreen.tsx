@@ -1,4 +1,4 @@
-// src/screens/HomeScreen.tsx: 
+// /src/screens/HomeScreen.tsx: 
 
 import { View, Text } from 'react-native'; 
 

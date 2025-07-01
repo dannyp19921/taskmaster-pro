@@ -1,4 +1,4 @@
-// src/screens/LoginScreen.tsx: 
+// /src/screens/LoginScreen.tsx: 
 
 import { View, Text, TextInput, Button } from 'react-native'; 
 import { useState } from 'react'; 
@@ -10,7 +10,7 @@ export default function LoginScreen({ navigation }: any) {
     const handleLogin = () => {
         console.log('Prøver å logge inn med', email, password); 
         // Here we shall integrate Supabase or backend later on
-        navigation.navigate('Home'); 
+        navigation.navigate('TaskList'); 
     };
 
     return (
