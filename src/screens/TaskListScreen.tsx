@@ -1,7 +1,8 @@
 // /src/screens/TaskListScreen.tsx - Oppryddet versjon
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // Ny import
 import { supabase } from '../services/supabase';
 
 // Type for oppgave - gjør koden mer forståelig
@@ -10,6 +11,7 @@ interface Task {
   title: string;
   due_date: string;
   priority: string;
+  status: string; // 'open' eller 'completed'
   user_id: string;
 }
 
@@ -97,18 +99,57 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     navigation.navigate('TaskDetail', { taskId });
   };
 
-  // Last oppgaver når skjermen lastes
+  // Last oppgaver når skjermen lastes ELLER kommer i fokus
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  // Oppdater oppgaver hver gang skjermen kommer i fokus (f.eks. når du går tilbake fra TaskDetail)
+  useFocusEffect(
+    useCallback(() => {
+      console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
+      fetchTasks();
+    }, [])
+  );
+
   // Vis en enkelt oppgave
   const renderTask = ({ item }: { item: Task }) => (
-    <View style={styles.taskCard}>
+    <View style={[
+      styles.taskCard,
+      // Grå ut fullførte oppgaver
+      item.status === 'completed' && { backgroundColor: '#f8f8f8' }
+    ]}>
       <TouchableOpacity onPress={() => openTask(item.id)} style={styles.taskContent}>
-        <Text style={styles.taskTitle}>{item.title}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+          <Text style={[
+            styles.taskTitle,
+            // Gjør fullførte oppgaver mindre fremtredende
+            item.status === 'completed' && { 
+              textDecorationLine: 'line-through', 
+              color: '#999' 
+            }
+          ]}>
+            {item.title}
+          </Text>
+          {item.status === 'completed' && (
+            <Text style={{ 
+              marginLeft: 10, 
+              color: '#4CAF50', 
+              fontSize: 16, 
+              fontWeight: 'bold' 
+            }}>
+              ✓
+            </Text>
+          )}
+        </View>
         <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
         <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
+        <Text style={[
+          styles.taskDetail,
+          item.status === 'completed' ? { color: '#4CAF50' } : { color: '#ff8800' }
+        ]}>
+          Status: {item.status === 'completed' ? 'Fullført' : 'Aktiv'}
+        </Text>
       </TouchableOpacity>
       
       <TouchableOpacity 

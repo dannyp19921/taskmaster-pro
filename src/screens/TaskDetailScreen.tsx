@@ -1,7 +1,7 @@
 // /src/screens/TaskDetailScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity } from 'react-native';
 import { supabase } from '../services/supabase';
 
 interface Task {
@@ -9,6 +9,7 @@ interface Task {
   title: string;
   due_date: string;
   priority: string;
+  status: string; // 'open' eller 'completed'
   user_id: string;
 }
 
@@ -17,6 +18,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('');
+  const [completed, setCompleted] = useState(false); // Ny state for completed
   const [loading, setLoading] = useState(true);
 
   const { taskId } = route.params;
@@ -48,6 +50,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       setTitle(data.title);
       setDueDate(data.due_date);
       setPriority(data.priority);
+      setCompleted(data.status === 'completed'); // Sett completed basert på status
     } catch (error) {
       console.log('💥 Uventet feil:', error);
       alert('En uventet feil oppstod');
@@ -72,6 +75,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           title: title.trim(),
           due_date: dueDate,
           priority: priority,
+          status: completed ? 'completed' : 'open', // Oppdater status basert på completed
         })
         .eq('id', taskId);
 
@@ -179,6 +183,34 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           borderRadius: 5,
         }}
       />
+
+      {/* Completed checkbox */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+        <TouchableOpacity 
+          style={{
+            width: 24,
+            height: 24,
+            borderWidth: 2,
+            borderColor: completed ? '#007AFF' : '#ccc',
+            backgroundColor: completed ? '#007AFF' : 'transparent',
+            borderRadius: 4,
+            marginRight: 10,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => {
+            console.log('🔄 Bytter completed status:', !completed);
+            setCompleted(!completed);
+          }}
+        >
+          {completed && (
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>✓</Text>
+          )}
+        </TouchableOpacity>
+        <Text style={{ fontSize: 16 }}>
+          {completed ? 'Oppgave fullført' : 'Oppgave ikke fullført'}
+        </Text>
+      </View>
 
       <Button title="Lagre endringer" onPress={handleSaveTask} />
       
