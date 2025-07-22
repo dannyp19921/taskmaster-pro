@@ -1,8 +1,8 @@
 // /src/screens/TaskListScreen.tsx - Oppryddet versjon
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native'; // Ny import
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 
 // Type for oppgave - gjør koden mer forståelig
@@ -23,7 +23,8 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date'); // Ny sortering state
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
+  const [searchText, setSearchText] = useState(''); // Ny state for søk
 
   // Hent oppgaver fra database
   const fetchTasks = async () => {
@@ -112,7 +113,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
       fetchTasks();
     }, [])
-  ); 
+  )
   
   // Enkle sortering-knapper
   const renderSortButtons = () => (
@@ -148,9 +149,30 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     </View>
   );
 
-  // Enkle filter- og sorteringslogikk
-  const getFilteredAndSortedTasks = () => {
-    // Først filtrer
+  // Søkeboks komponent
+  const renderSearchBox = () => (
+    <View style={styles.searchContainer}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="🔍 Søk etter oppgaver..."
+        value={searchText}
+        onChangeText={setSearchText}
+        placeholderTextColor="#999"
+      />
+      {searchText.length > 0 && (
+        <TouchableOpacity 
+          style={styles.clearSearchButton}
+          onPress={() => setSearchText('')}
+        >
+          <Text style={styles.clearSearchText}>✕</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  // Filter, søk og sorteringslogikk kombinert
+  const getFilteredSearchedAndSortedTasks = () => {
+    // Først filtrer etter status
     let filteredTasks = tasks;
     switch (filter) {
       case 'active':
@@ -163,7 +185,14 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         filteredTasks = tasks;
     }
 
-    // Så sorter
+    // Så søk i tittel
+    if (searchText.trim()) {
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(searchText.toLowerCase().trim())
+      );
+    }
+
+    // Til slutt sorter
     switch (sortBy) {
       case 'priority':
         return filteredTasks.sort((a, b) => {
@@ -276,6 +305,9 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     <View style={styles.container}>
       <Text style={styles.header}>Mine oppgaver</Text>
 
+      {/* Søkeboks */}
+      {renderSearchBox()}
+
       {/* Filter-knapper */}
       {renderFilterButtons()}
 
@@ -284,15 +316,17 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
 
       {loading ? (
         <Text style={styles.loadingText}>Laster oppgaver...</Text>
-      ) : getFilteredAndSortedTasks().length === 0 ? (
+      ) : getFilteredSearchedAndSortedTasks().length === 0 ? (
         <Text style={styles.emptyText}>
-          {filter === 'all' ? 'Ingen oppgaver ennå' : 
-           filter === 'active' ? 'Ingen aktive oppgaver' : 
-           'Ingen fullførte oppgaver'}
+          {searchText.trim() 
+            ? `Ingen oppgaver funnet for "${searchText}"` 
+            : filter === 'all' ? 'Ingen oppgaver ennå' : 
+              filter === 'active' ? 'Ingen aktive oppgaver' : 
+              'Ingen fullførte oppgaver'}
         </Text>
       ) : (
         <FlatList
-          data={getFilteredAndSortedTasks()} // Bruk filtrerte OG sorterte oppgaver
+          data={getFilteredSearchedAndSortedTasks()} // Bruk kombinert søk, filter og sortering
           keyExtractor={(item) => item.id}
           renderItem={renderTask}
           style={styles.taskList}
@@ -442,5 +476,37 @@ const styles = StyleSheet.create({
   },
   sortButtonTextActive: {
     color: '#fff',
+  },
+  // Søkeboks styling
+  searchContainer: {
+    position: 'relative',
+    marginBottom: 15,
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    elevation: 2,
+    paddingRight: 45, // Plass for clear-knapp
+  },
+  clearSearchButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{ translateY: -12 }],
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearSearchText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
