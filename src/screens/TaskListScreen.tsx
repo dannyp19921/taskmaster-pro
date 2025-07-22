@@ -22,7 +22,8 @@ interface TaskListScreenProps {
 export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all'); // Ny filter state
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date'); // Ny sortering state
 
   // Hent oppgaver fra database
   const fetchTasks = async () => {
@@ -111,17 +112,72 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
       fetchTasks();
     }, [])
+  ); 
+  
+  // Enkle sortering-knapper
+  const renderSortButtons = () => (
+    <View style={styles.sortContainer}>
+      <Text style={styles.sortLabel}>Sorter:</Text>
+      
+      <TouchableOpacity
+        style={[styles.sortButton, sortBy === 'date' && styles.sortButtonActive]}
+        onPress={() => setSortBy('date')}
+      >
+        <Text style={[styles.sortButtonText, sortBy === 'date' && styles.sortButtonTextActive]}>
+          📅 Dato
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.sortButton, sortBy === 'priority' && styles.sortButtonActive]}
+        onPress={() => setSortBy('priority')}
+      >
+        <Text style={[styles.sortButtonText, sortBy === 'priority' && styles.sortButtonTextActive]}>
+          ⚡ Prioritet
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.sortButton, sortBy === 'none' && styles.sortButtonActive]}
+        onPress={() => setSortBy('none')}
+      >
+        <Text style={[styles.sortButtonText, sortBy === 'none' && styles.sortButtonTextActive]}>
+          📝 Standard
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 
-  // Enkel filter-logikk
-  const getFilteredTasks = () => {
+  // Enkle filter- og sorteringslogikk
+  const getFilteredAndSortedTasks = () => {
+    // Først filtrer
+    let filteredTasks = tasks;
     switch (filter) {
       case 'active':
-        return tasks.filter(task => task.status === 'open');
+        filteredTasks = tasks.filter(task => task.status === 'open');
+        break;
       case 'completed':
-        return tasks.filter(task => task.status === 'completed');
+        filteredTasks = tasks.filter(task => task.status === 'completed');
+        break;
       default:
-        return tasks;
+        filteredTasks = tasks;
+    }
+
+    // Så sorter
+    switch (sortBy) {
+      case 'priority':
+        return filteredTasks.sort((a, b) => {
+          const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+          const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+          const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          return bPriority - aPriority; // Høyeste prioritet først
+        });
+      case 'date':
+        return filteredTasks.sort((a, b) => {
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime(); // Nærmeste dato først
+        });
+      default:
+        return filteredTasks;
     }
   };
 
@@ -218,14 +274,17 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Mine oppgaver 🎯</Text>
+      <Text style={styles.header}>Mine oppgaver</Text>
 
       {/* Filter-knapper */}
       {renderFilterButtons()}
 
+      {/* Sortering-knapper */}
+      {renderSortButtons()}
+
       {loading ? (
         <Text style={styles.loadingText}>Laster oppgaver...</Text>
-      ) : getFilteredTasks().length === 0 ? (
+      ) : getFilteredAndSortedTasks().length === 0 ? (
         <Text style={styles.emptyText}>
           {filter === 'all' ? 'Ingen oppgaver ennå' : 
            filter === 'active' ? 'Ingen aktive oppgaver' : 
@@ -233,7 +292,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         </Text>
       ) : (
         <FlatList
-          data={getFilteredTasks()} // Bruk filtrerte oppgaver
+          data={getFilteredAndSortedTasks()} // Bruk filtrerte OG sorterte oppgaver
           keyExtractor={(item) => item.id}
           renderItem={renderTask}
           style={styles.taskList}
@@ -349,6 +408,39 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   filterButtonTextActive: {
+    color: '#fff',
+  },
+  // Sortering-knapper styling
+  sortContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 8,
+  },
+  sortLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginRight: 8,
+  },
+  sortButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f8f8f8',
+  },
+  sortButtonActive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  sortButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  sortButtonTextActive: {
     color: '#fff',
   },
 });
