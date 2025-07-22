@@ -1,7 +1,7 @@
 // /src/screens/TaskDetailScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { supabase } from '../services/supabase';
 
 interface Task {
@@ -9,7 +9,7 @@ interface Task {
   title: string;
   due_date: string;
   priority: string;
-  status: string; // 'open' eller 'completed'
+  status: string;
   user_id: string;
 }
 
@@ -17,11 +17,18 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   const [task, setTask] = useState<Task | null>(null);
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [priority, setPriority] = useState('');
-  const [completed, setCompleted] = useState(false); // Ny state for completed
+  const [priority, setPriority] = useState('Medium');
+  const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
 
   const { taskId } = route.params;
+
+  // Enkel dato-validering
+  const isValidDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date.getTime()) && dateString.match(/^\d{4}-\d{2}-\d{2}$/);
+  };
 
   // Hent oppgave når skjermen lastes
   useEffect(() => {
@@ -50,7 +57,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       setTitle(data.title);
       setDueDate(data.due_date);
       setPriority(data.priority);
-      setCompleted(data.status === 'completed'); // Sett completed basert på status
+      setCompleted(data.status === 'completed');
     } catch (error) {
       console.log('💥 Uventet feil:', error);
       alert('En uventet feil oppstod');
@@ -61,12 +68,23 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   };
 
   const handleSaveTask = async () => {
+    console.log('💾 LAGRE ENDRINGER TRYKKET');
+
+    // Validering
     if (!title.trim()) {
       alert('Tittel kan ikke være tom');
       return;
     }
 
-    console.log('💾 Lagrer endringer for oppgave:', taskId);
+    if (!dueDate.trim()) {
+      alert('Frist må fylles ut');
+      return;
+    }
+
+    if (!isValidDate(dueDate)) {
+      alert('Frist må være i format YYYY-MM-DD (f.eks. 2025-12-31)');
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -75,7 +93,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           title: title.trim(),
           due_date: dueDate,
           priority: priority,
-          status: completed ? 'completed' : 'open', // Oppdater status basert på completed
+          status: completed ? 'completed' : 'open',
         })
         .eq('id', taskId);
 
@@ -101,8 +119,6 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       return;
     }
 
-    console.log('🗑️ Sletter oppgave:', taskId);
-
     try {
       const { error } = await supabase
         .from('tasks')
@@ -124,9 +140,68 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     }
   };
 
+  // Prioritet dropdown
+  const renderPriorityPicker = () => (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity 
+        style={styles.dropdownButton}
+        onPress={() => setShowPriorityPicker(!showPriorityPicker)}
+      >
+        <Text style={styles.dropdownButtonText}>
+          {priority === 'High' ? '🔴 Høy' : 
+           priority === 'Medium' ? '🟡 Medium' : 
+           '🟢 Lav'}
+        </Text>
+        <Text style={styles.dropdownArrow}>
+          {showPriorityPicker ? '▲' : '▼'}
+        </Text>
+      </TouchableOpacity>
+
+      {showPriorityPicker && (
+        <View style={styles.dropdownOptions}>
+          <TouchableOpacity
+            style={[styles.dropdownOption, priority === 'High' && styles.dropdownOptionActive]}
+            onPress={() => {
+              setPriority('High');
+              setShowPriorityPicker(false);
+            }}
+          >
+            <Text style={[styles.dropdownOptionText, priority === 'High' && styles.dropdownOptionTextActive]}>
+              🔴 Høy
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.dropdownOption, priority === 'Medium' && styles.dropdownOptionActive]}
+            onPress={() => {
+              setPriority('Medium');
+              setShowPriorityPicker(false);
+            }}
+          >
+            <Text style={[styles.dropdownOptionText, priority === 'Medium' && styles.dropdownOptionTextActive]}>
+              🟡 Medium
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.dropdownOption, { borderBottomWidth: 0 }, priority === 'Low' && styles.dropdownOptionActive]}
+            onPress={() => {
+              setPriority('Low');
+              setShowPriorityPicker(false);
+            }}
+          >
+            <Text style={[styles.dropdownOptionText, priority === 'Low' && styles.dropdownOptionTextActive]}>
+              🟢 Lav
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <Text>Laster oppgave...</Text>
       </View>
     );
@@ -134,93 +209,258 @@ export default function TaskDetailScreen({ navigation, route }: any) {
 
   if (!task) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.errorContainer}>
         <Text>Oppgaven ble ikke funnet</Text>
-        <Button title="Gå tilbake" onPress={() => navigation.goBack()} />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backButtonText}>Gå tilbake</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
-      <Text style={{ fontSize: 24, marginBottom: 20 }}>Rediger oppgave</Text>
+    <View style={styles.container}>
+      <Text style={styles.header}>Rediger oppgave</Text>
 
-      <TextInput
-        placeholder="Tittel"
-        value={title}
-        onChangeText={setTitle}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          marginBottom: 10,
-          borderRadius: 5,
-        }}
-      />
+      {/* Tittel input */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Tittel *</Text>
+        <TextInput
+          placeholder="Skriv inn tittel..."
+          value={title}
+          onChangeText={setTitle}
+          style={styles.textInput}
+        />
+      </View>
 
-      <TextInput
-        placeholder="Frist (YYYY-MM-DD)"
-        value={dueDate}
-        onChangeText={setDueDate}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          marginBottom: 10,
-          borderRadius: 5,
-        }}
-      />
-
-      <TextInput
-        placeholder="Prioritet (Low / Medium / High)"
-        value={priority}
-        onChangeText={setPriority}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          marginBottom: 20,
-          borderRadius: 5,
-        }}
-      />
-
-      {/* Completed checkbox */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-        <TouchableOpacity 
-          style={{
-            width: 24,
-            height: 24,
-            borderWidth: 2,
-            borderColor: completed ? '#007AFF' : '#ccc',
-            backgroundColor: completed ? '#007AFF' : 'transparent',
-            borderRadius: 4,
-            marginRight: 10,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => {
-            console.log('🔄 Bytter completed status:', !completed);
-            setCompleted(!completed);
-          }}
-        >
-          {completed && (
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>✓</Text>
-          )}
-        </TouchableOpacity>
-        <Text style={{ fontSize: 16 }}>
-          {completed ? 'Oppgave fullført' : 'Oppgave ikke fullført'}
+      {/* Dato input */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Frist *</Text>
+        <TextInput
+          placeholder="YYYY-MM-DD (f.eks. 2025-12-31)"
+          value={dueDate}
+          onChangeText={setDueDate}
+          style={styles.textInput}
+        />
+        <Text style={styles.helpText}>
+          Format: År-Måned-Dag (f.eks. 2025-07-30)
         </Text>
       </View>
 
-      <Button title="Lagre endringer" onPress={handleSaveTask} />
-      
-      <View style={{ marginTop: 10 }}>
-        <Button title="Slett oppgave" onPress={handleDeleteTask} color="red" />
+      {/* Prioritet dropdown */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Prioritet *</Text>
+        {renderPriorityPicker()}
       </View>
-      
-      <View style={{ marginTop: 10 }}>
-        <Button title="Avbryt" onPress={() => navigation.goBack()} color="gray" />
+
+      {/* Completed checkbox */}
+      <View style={styles.inputContainer}>
+        <TouchableOpacity 
+          style={styles.statusToggle}
+          onPress={() => setCompleted(!completed)}
+        >
+          <View style={[styles.checkbox, completed && styles.checkboxChecked]}>
+            {completed && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.statusText}>
+            {completed ? 'Oppgave fullført' : 'Oppgave ikke fullført'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Action knapper */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
+          <Text style={styles.buttonText}>Lagre endringer</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteTask}>
+          <Text style={styles.buttonText}>Slett oppgave</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.cancelButtonText}>Avbryt</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    color: '#333',
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    fontSize: 16,
+    elevation: 2,
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  dropdownContainer: {
+    marginBottom: 10,
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: '#666',
+  },
+  dropdownOptions: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    elevation: 5,
+    marginTop: -1,
+  },
+  dropdownOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownOptionActive: {
+    backgroundColor: '#007AFF',
+  },
+  dropdownOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dropdownOptionTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  statusToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    elevation: 2,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  statusText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  buttonContainer: {
+    marginTop: 30,
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 3,
+  },
+  deleteButton: {
+    backgroundColor: '#ff4444',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 3,
+  },
+  cancelButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
