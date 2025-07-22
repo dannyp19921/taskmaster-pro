@@ -22,6 +22,7 @@ interface TaskListScreenProps {
 export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all'); // Ny filter state
 
   // Hent oppgaver fra database
   const fetchTasks = async () => {
@@ -112,6 +113,50 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     }, [])
   );
 
+  // Enkel filter-logikk
+  const getFilteredTasks = () => {
+    switch (filter) {
+      case 'active':
+        return tasks.filter(task => task.status === 'open');
+      case 'completed':
+        return tasks.filter(task => task.status === 'completed');
+      default:
+        return tasks;
+    }
+  };
+
+  // Enkle filter-knapper
+  const renderFilterButtons = () => (
+    <View style={styles.filterContainer}>
+      <TouchableOpacity
+        style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
+        onPress={() => setFilter('all')}
+      >
+        <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
+          Alle ({tasks.length})
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.filterButton, filter === 'active' && styles.filterButtonActive]}
+        onPress={() => setFilter('active')}
+      >
+        <Text style={[styles.filterButtonText, filter === 'active' && styles.filterButtonTextActive]}>
+          Aktive ({tasks.filter(t => t.status === 'open').length})
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
+        onPress={() => setFilter('completed')}
+      >
+        <Text style={[styles.filterButtonText, filter === 'completed' && styles.filterButtonTextActive]}>
+          Fullført ({tasks.filter(t => t.status === 'completed').length})
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // Vis en enkelt oppgave
   const renderTask = ({ item }: { item: Task }) => (
     <View style={[
@@ -173,15 +218,22 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Mine oppgaver</Text>
+      <Text style={styles.header}>Mine oppgaver 🎯</Text>
+
+      {/* Filter-knapper */}
+      {renderFilterButtons()}
 
       {loading ? (
         <Text style={styles.loadingText}>Laster oppgaver...</Text>
-      ) : tasks.length === 0 ? (
-        <Text style={styles.emptyText}>Ingen oppgaver ennå</Text>
+      ) : getFilteredTasks().length === 0 ? (
+        <Text style={styles.emptyText}>
+          {filter === 'all' ? 'Ingen oppgaver ennå' : 
+           filter === 'active' ? 'Ingen aktive oppgaver' : 
+           'Ingen fullførte oppgaver'}
+        </Text>
       ) : (
         <FlatList
-          data={tasks}
+          data={getFilteredTasks()} // Bruk filtrerte oppgaver
           keyExtractor={(item) => item.id}
           renderItem={renderTask}
           style={styles.taskList}
@@ -270,5 +322,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Filter-knapper styling
+  filterContainer: {
+    flexDirection: 'row',
+    marginBottom: 15,
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterButtonTextActive: {
+    color: '#fff',
   },
 });
