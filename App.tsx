@@ -8,6 +8,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import TaskListScreen from './src/screens/TaskListScreen';
 import CreateTaskScreen from './src/screens/CreateTaskScreen';
 import TaskDetailScreen from './src/screens/TaskDetailScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
 
 export default function App() {
   const Stack = createNativeStackNavigator(); 
@@ -21,6 +22,7 @@ export default function App() {
         <Stack.Screen name="TaskList" component={TaskListScreen} />
         <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
         <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

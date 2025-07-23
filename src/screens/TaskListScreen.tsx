@@ -493,6 +493,16 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     <View style={styles.container}>
       <Text style={styles.header}>Mine oppgaver</Text>
 
+      {/* NY: Dashboard-knapp */}
+      <View style={styles.headerActions}>
+        <TouchableOpacity 
+          style={styles.dashboardButton}
+          onPress={() => navigation.navigate('Dashboard')}
+        >
+          <Text style={styles.dashboardButtonText}>📊 Dashboard</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Søkeboks */}
       {renderSearchBox()}
 
@@ -782,5 +792,21 @@ const styles = StyleSheet.create({
   },
   categoryFilterTextActive: {
     color: '#fff',
+  },
+  // NY: Dashboard-knapp styles
+  headerActions: {
+    marginBottom: 20,
+  },
+  dashboardButton: {
+    backgroundColor: '#2196F3',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 3,
+  },
+  dashboardButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
