@@ -1,7 +1,7 @@
-// /src/screens/TaskDetailScreen.tsx
+// /src/screens/TaskDetailScreen.tsx - Med fikset kategori-dropdown
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { supabase } from '../services/supabase';
 
 interface Task {
@@ -246,7 +246,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     </View>
   );
 
-  // Kategori dropdown (samme som CreateTaskScreen)
+  // Kategori dropdown - MED SCROLLVIEW for å unngå overflow
   const renderCategoryPicker = () => (
     <View style={styles.dropdownContainer}>
       <TouchableOpacity 
@@ -262,28 +262,36 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       </TouchableOpacity>
 
       {showCategoryPicker && (
-        <View style={styles.dropdownOptions}>
-          {categoryOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.dropdownOption,
-                category === option.value && styles.dropdownOptionActive,
-                { borderLeftWidth: 4, borderLeftColor: option.color }
-              ]}
-              onPress={() => {
-                setCategory(option.value);
-                setShowCategoryPicker(false);
-              }}
-            >
-              <Text style={[
-                styles.dropdownOptionText,
-                category === option.value && styles.dropdownOptionTextActive
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.dropdownOptionsContainer}>
+          <ScrollView 
+            style={styles.dropdownOptionsScroll}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+          >
+            {categoryOptions.map((option, index) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.dropdownOption,
+                  category === option.value && styles.dropdownOptionActive,
+                  { borderLeftWidth: 4, borderLeftColor: option.color },
+                  // Fjern border på siste element
+                  index === categoryOptions.length - 1 && { borderBottomWidth: 0 }
+                ]}
+                onPress={() => {
+                  setCategory(option.value);
+                  setShowCategoryPicker(false);
+                }}
+              >
+                <Text style={[
+                  styles.dropdownOptionText,
+                  category === option.value && styles.dropdownOptionTextActive
+                ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -595,6 +603,22 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 8,
     elevation: 5,
     marginTop: -1,
+  },
+  // NY: Container for kategori-dropdown med begrenset høyde
+  dropdownOptionsContainer: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    elevation: 5,
+    marginTop: -1,
+    maxHeight: 200, // Begrens høyden til 200px
+  },
+  // NY: Scrollbar inni kategori-dropdown
+  dropdownOptionsScroll: {
+    maxHeight: 200,
   },
   dropdownOption: {
     padding: 15,

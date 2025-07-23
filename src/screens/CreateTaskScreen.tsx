@@ -1,7 +1,7 @@
-// /src/screens/CreateTaskScreen.tsx
+// /src/screens/CreateTaskScreen.tsx - Med fikset kategori-dropdown
 
 import React, { useState } from 'react'; 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native'; 
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native'; 
 import { supabase } from '../services/supabase'; 
 
 export default function CreateTaskScreen({ navigation }: any) {
@@ -202,7 +202,7 @@ export default function CreateTaskScreen({ navigation }: any) {
         </View>
     );
 
-    // Kategori dropdown
+    // Kategori dropdown - MED SCROLLVIEW for å unngå overflow
     const renderCategoryPicker = () => (
         <View style={styles.dropdownContainer}>
             <TouchableOpacity 
@@ -218,28 +218,36 @@ export default function CreateTaskScreen({ navigation }: any) {
             </TouchableOpacity>
 
             {showCategoryPicker && (
-                <View style={styles.dropdownOptions}>
-                    {categoryOptions.map((option) => (
-                        <TouchableOpacity
-                            key={option.value}
-                            style={[
-                                styles.dropdownOption,
-                                category === option.value && styles.dropdownOptionActive,
-                                { borderLeftWidth: 4, borderLeftColor: option.color }
-                            ]}
-                            onPress={() => {
-                                setCategory(option.value);
-                                setShowCategoryPicker(false);
-                            }}
-                        >
-                            <Text style={[
-                                styles.dropdownOptionText,
-                                category === option.value && styles.dropdownOptionTextActive
-                            ]}>
-                                {option.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                <View style={styles.dropdownOptionsContainer}>
+                    <ScrollView 
+                        style={styles.dropdownOptionsScroll}
+                        nestedScrollEnabled={true}
+                        showsVerticalScrollIndicator={true}
+                    >
+                        {categoryOptions.map((option, index) => (
+                            <TouchableOpacity
+                                key={option.value}
+                                style={[
+                                    styles.dropdownOption,
+                                    category === option.value && styles.dropdownOptionActive,
+                                    { borderLeftWidth: 4, borderLeftColor: option.color },
+                                    // Fjern border på siste element
+                                    index === categoryOptions.length - 1 && { borderBottomWidth: 0 }
+                                ]}
+                                onPress={() => {
+                                    setCategory(option.value);
+                                    setShowCategoryPicker(false);
+                                }}
+                            >
+                                <Text style={[
+                                    styles.dropdownOptionText,
+                                    category === option.value && styles.dropdownOptionTextActive
+                                ]}>
+                                    {option.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             )}
         </View>
@@ -492,8 +500,7 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
     dropdownContainer: {
-        // Ingen position relative - lar dropdown flyte naturlig
-        marginBottom: 10, // Ekstra plass for dropdown
+        marginBottom: 10,
     },
     dropdownButton: {
         borderWidth: 1,
@@ -515,15 +522,30 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     dropdownOptions: {
-        // Ikke position absolute - naturlig flyt
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
-        borderTopWidth: 0, // Koble til knappen
+        borderTopWidth: 0,
         borderBottomLeftRadius: 8,
         borderBottomRightRadius: 8,
         elevation: 5,
-        marginTop: -1, // Koble til knappen
+        marginTop: -1,
+    },
+    // NY: Container for kategori-dropdown med begrenset høyde
+    dropdownOptionsContainer: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderTopWidth: 0,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        elevation: 5,
+        marginTop: -1,
+        maxHeight: 200, // Begrens høyden til 200px
+    },
+    // NY: Scrollbar inni kategori-dropdown
+    dropdownOptionsScroll: {
+        maxHeight: 200,
     },
     dropdownOption: {
         padding: 15,
