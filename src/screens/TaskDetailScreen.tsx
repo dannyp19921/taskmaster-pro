@@ -1,7 +1,7 @@
 // /src/screens/TaskDetailScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { supabase } from '../services/supabase';
 
 interface Task {
@@ -21,8 +21,27 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false); // Kalender state
+  const [selectedDate, setSelectedDate] = useState(new Date()); // Valgt dato
 
   const { taskId } = route.params;
+
+  // Formatter dato til YYYY-MM-DD (lokal tid, ikke UTC)
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Formatter dato til visning (norsk format)
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return '';
+    
+    // Parse YYYY-MM-DD string til lokale dato-komponenter
+    const [year, month, day] = dateString.split('-');
+    return `${day}.${month}.${year}`;
+  };
 
   // Enkel dato-validering
   const isValidDate = (dateString: string) => {
@@ -58,6 +77,11 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       setDueDate(data.due_date);
       setPriority(data.priority);
       setCompleted(data.status === 'completed');
+      
+      // Sett selectedDate basert på oppgavens due_date
+      if (data.due_date) {
+        setSelectedDate(new Date(data.due_date));
+      }
     } catch (error) {
       console.log('💥 Uventet feil:', error);
       alert('En uventet feil oppstod');
@@ -76,13 +100,8 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       return;
     }
 
-    if (!dueDate.trim()) {
-      alert('Frist må fylles ut');
-      return;
-    }
-
-    if (!isValidDate(dueDate)) {
-      alert('Frist må være i format YYYY-MM-DD (f.eks. 2025-12-31)');
+    if (!dueDate) {
+      alert('Frist må velges');
       return;
     }
 
@@ -199,6 +218,124 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     </View>
   );
 
+  // Kalender-komponent (samme som i CreateTaskScreen)
+  const renderCalendar = () => {
+    const today = new Date();
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
+    
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+    
+    const monthNames = [
+      'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
+      'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    const weekDays = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+    
+    const days = [];
+    
+    // Tomme celler før månedens start
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(<View key={`empty-${i}`} style={styles.emptyDay} />);
+    }
+    
+    // Dager i måneden
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const isToday = date.toDateString() === today.toDateString();
+      const isSelected = date.toDateString() === selectedDate.toDateString();
+      const isPast = date < today && !isToday;
+      
+      days.push(
+        <TouchableOpacity
+          key={day}
+          style={[
+            styles.dayButton,
+            isToday && styles.todayButton,
+            isSelected && styles.selectedDayButton,
+            isPast && styles.pastDayButton
+          ]}
+          onPress={() => {
+            if (!isPast) {
+              setSelectedDate(date);
+              setDueDate(formatDate(date));
+              setShowCalendar(false);
+            }
+          }}
+          disabled={isPast}
+        >
+          <Text style={[
+            styles.dayText,
+            isToday && styles.todayText,
+            isSelected && styles.selectedDayText,
+            isPast && styles.pastDayText
+          ]}>
+            {day}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+    
+    return (
+      <Modal visible={showCalendar} transparent animationType="fade">
+        <View style={styles.calendarOverlay}>
+          <View style={styles.calendarContainer}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity
+                onPress={() => {
+                  const prevMonth = new Date(selectedDate);
+                  prevMonth.setMonth(prevMonth.getMonth() - 1);
+                  setSelectedDate(prevMonth);
+                }}
+                style={styles.navButton}
+              >
+                <Text style={styles.navButtonText}>‹</Text>
+              </TouchableOpacity>
+              
+              <Text style={styles.monthYearText}>
+                {monthNames[currentMonth]} {currentYear}
+              </Text>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  const nextMonth = new Date(selectedDate);
+                  nextMonth.setMonth(nextMonth.getMonth() + 1);
+                  setSelectedDate(nextMonth);
+                }}
+                style={styles.navButton}
+              >
+                <Text style={styles.navButtonText}>›</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.weekDaysRow}>
+              {weekDays.map(day => (
+                <Text key={day} style={styles.weekDayText}>{day}</Text>
+              ))}
+            </View>
+            
+            <View style={styles.calendarGrid}>
+              {days}
+            </View>
+            
+            <View style={styles.calendarButtons}>
+              <TouchableOpacity 
+                style={styles.cancelCalendarButton}
+                onPress={() => setShowCalendar(false)}
+              >
+                <Text style={styles.cancelCalendarText}>Avbryt</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -233,17 +370,20 @@ export default function TaskDetailScreen({ navigation, route }: any) {
         />
       </View>
 
-      {/* Dato input */}
+      {/* Dato picker med kalender */}
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Frist *</Text>
-        <TextInput
-          placeholder="YYYY-MM-DD (f.eks. 2025-12-31)"
-          value={dueDate}
-          onChangeText={setDueDate}
-          style={styles.textInput}
-        />
+        <TouchableOpacity
+          style={styles.datePickerButton}
+          onPress={() => setShowCalendar(true)}
+        >
+          <Text style={styles.datePickerText}>
+            {dueDate ? formatDateDisplay(dueDate) : 'Velg dato'}
+          </Text>
+          <Text style={styles.calendarIcon}>📅</Text>
+        </TouchableOpacity>
         <Text style={styles.helpText}>
-          Format: År-Måned-Dag (f.eks. 2025-07-30)
+          Trykk for å åpne kalender
         </Text>
       </View>
 
@@ -282,6 +422,9 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           <Text style={styles.cancelButtonText}>Avbryt</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Kalender modal */}
+      {renderCalendar()}
     </View>
   );
 }
@@ -460,6 +603,124 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Kalender styling (samme som CreateTaskScreen)
+  datePickerButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+  },
+  datePickerText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  calendarIcon: {
+    fontSize: 18,
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    margin: 20,
+    maxWidth: 350,
+    elevation: 10,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  navButton: {
+    padding: 10,
+  },
+  navButtonText: {
+    fontSize: 24,
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  monthYearText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  weekDaysRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  weekDayText: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    paddingVertical: 5,
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  emptyDay: {
+    width: '14.28%',
+    height: 40,
+  },
+  dayButton: {
+    width: '14.28%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  todayButton: {
+    backgroundColor: '#007AFF',
+  },
+  selectedDayButton: {
+    backgroundColor: '#4CAF50',
+  },
+  pastDayButton: {
+    opacity: 0.3,
+  },
+  dayText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  todayText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  selectedDayText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  pastDayText: {
+    color: '#ccc',
+  },
+  calendarButtons: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  cancelCalendarButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 6,
+    backgroundColor: '#f0f0f0',
+  },
+  cancelCalendarText: {
+    color: '#666',
     fontSize: 16,
     fontWeight: '600',
   },

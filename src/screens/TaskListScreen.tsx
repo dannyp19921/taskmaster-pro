@@ -114,7 +114,6 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       fetchTasks();
     }, [])
   )
-  
   // Enkle sortering-knapper
   const renderSortButtons = () => (
     <View style={styles.sortContainer}>
@@ -148,6 +147,33 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       </TouchableOpacity>
     </View>
   );
+
+  // Deadline-logikk for å beregne status
+  const getDeadlineStatus = (dueDate: string) => {
+    const today = new Date();
+    const deadline = new Date(dueDate);
+    
+    // Reset tid for sammenligning (kun dato)
+    today.setHours(0, 0, 0, 0);
+    deadline.setHours(0, 0, 0, 0);
+    
+    const timeDiff = deadline.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    if (daysDiff < 0) {
+      return { status: 'overdue', days: Math.abs(daysDiff), color: '#ff4444', badge: 'UTLØPT' };
+    } else if (daysDiff === 0) {
+      return { status: 'today', days: 0, color: '#ff6b35', badge: 'I DAG!' };
+    } else if (daysDiff === 1) {
+      return { status: 'tomorrow', days: 1, color: '#ffa500', badge: 'I MORGEN' };
+    } else if (daysDiff <= 3) {
+      return { status: 'soon', days: daysDiff, color: '#ffcc00', badge: `${daysDiff} DAGER` };
+    } else if (daysDiff <= 7) {
+      return { status: 'week', days: daysDiff, color: '#4CAF50', badge: `${daysDiff} DAGER` };
+    } else {
+      return { status: 'normal', days: daysDiff, color: '#666', badge: null };
+    }
+  };
 
   // Søkeboks komponent
   const renderSearchBox = () => (
@@ -242,64 +268,95 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     </View>
   );
 
-  // Vis en enkelt oppgave
-  const renderTask = ({ item }: { item: Task }) => (
-    <View style={[
-      styles.taskCard,
-      // Grå ut fullførte oppgaver
-      item.status === 'completed' && { backgroundColor: '#f8f8f8' }
-    ]}>
-      <TouchableOpacity onPress={() => openTask(item.id)} style={styles.taskContent}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+  // Vis en enkelt oppgave med deadline-varsler
+  const renderTask = ({ item }: { item: Task }) => {
+    const deadlineInfo = getDeadlineStatus(item.due_date);
+    const isCompleted = item.status === 'completed';
+    
+    return (
+      <View style={[
+        styles.taskCard,
+        // Grå ut fullførte oppgaver
+        isCompleted && { backgroundColor: '#f8f8f8' },
+        // Fargekoding for deadline (kun på aktive oppgaver)
+        !isCompleted && { borderLeftWidth: 4, borderLeftColor: deadlineInfo.color }
+      ]}>
+        <TouchableOpacity onPress={() => openTask(item.id)} style={styles.taskContent}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+            <Text style={[
+              styles.taskTitle,
+              // Gjør fullførte oppgaver mindre fremtredende
+              isCompleted && { 
+                textDecorationLine: 'line-through', 
+                color: '#999' 
+              }
+            ]}>
+              {item.title}
+            </Text>
+            {isCompleted && (
+              <Text style={{ 
+                marginLeft: 10, 
+                color: '#4CAF50', 
+                fontSize: 16, 
+                fontWeight: 'bold' 
+              }}>
+                ✓
+              </Text>
+            )}
+            {/* Deadline badge (kun på aktive oppgaver) */}
+            {!isCompleted && deadlineInfo.badge && (
+              <View style={[
+                styles.deadlineBadge, 
+                { backgroundColor: deadlineInfo.color }
+              ]}>
+                <Text style={styles.deadlineBadgeText}>
+                  {deadlineInfo.badge}
+                </Text>
+              </View>
+            )}
+          </View>
+          
+          <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
+          <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
           <Text style={[
-            styles.taskTitle,
-            // Gjør fullførte oppgaver mindre fremtredende
-            item.status === 'completed' && { 
-              textDecorationLine: 'line-through', 
-              color: '#999' 
-            }
+            styles.taskDetail,
+            isCompleted ? { color: '#4CAF50' } : { color: '#ff8800' }
           ]}>
-            {item.title}
+            Status: {isCompleted ? 'Fullført' : 'Aktiv'}
           </Text>
-          {item.status === 'completed' && (
-            <Text style={{ 
-              marginLeft: 10, 
-              color: '#4CAF50', 
-              fontSize: 16, 
-              fontWeight: 'bold' 
-            }}>
-              ✓
+          
+          {/* Deadline info (kun på aktive oppgaver) */}
+          {!isCompleted && (
+            <Text style={[styles.taskDetail, { color: deadlineInfo.color, fontWeight: '600' }]}>
+              {deadlineInfo.status === 'overdue' && `Utløpt for ${deadlineInfo.days} dag${deadlineInfo.days > 1 ? 'er' : ''} siden`}
+              {deadlineInfo.status === 'today' && 'Utløper i dag!'}
+              {deadlineInfo.status === 'tomorrow' && 'Utløper i morgen'}
+              {deadlineInfo.status === 'soon' && `${deadlineInfo.days} dager igjen`}
+              {deadlineInfo.status === 'week' && `${deadlineInfo.days} dager igjen`}
+              {deadlineInfo.status === 'normal' && `${deadlineInfo.days} dager igjen`}
             </Text>
           )}
-        </View>
-        <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
-        <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
-        <Text style={[
-          styles.taskDetail,
-          item.status === 'completed' ? { color: '#4CAF50' } : { color: '#ff8800' }
-        ]}>
-          Status: {item.status === 'completed' ? 'Fullført' : 'Aktiv'}
-        </Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.deleteButton}
-        onPress={() => {
-          console.log('🟥 DIREKTE SLETTING - item.id:', item.id);
-          handleDeleteTask(item.id);
-        }}
-      >
-        <Text style={styles.deleteButtonText}>Slett direkte</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={[styles.deleteButton, { backgroundColor: '#ff8800', marginTop: 5 }]}
-        onPress={() => confirmDelete(item.id, item.title)}
-      >
-        <Text style={styles.deleteButtonText}>Slett (bekreft)</Text>
-      </TouchableOpacity>
-    </View>
-  );
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={() => {
+            console.log('🟥 DIREKTE SLETTING - item.id:', item.id);
+            handleDeleteTask(item.id);
+          }}
+        >
+          <Text style={styles.deleteButtonText}>Slett direkte</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.deleteButton, { backgroundColor: '#ff8800', marginTop: 5 }]}
+          onPress={() => confirmDelete(item.id, item.title)}
+        >
+          <Text style={styles.deleteButtonText}>Slett (bekreft)</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -508,5 +565,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  // Deadline-varsler styling
+  deadlineBadge: {
+    marginLeft: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  deadlineBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
 });
