@@ -1,4 +1,4 @@
-// /src/screens/TaskListScreen.tsx - Oppryddet versjon
+// /src/screens/TaskListScreen.tsx - Med kategori-visning
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
@@ -11,6 +11,7 @@ interface Task {
   title: string;
   due_date: string;
   priority: string;
+  category?: string; // Legg til category som optional (for bakoverkompatibilitet)
   status: string; // 'open' eller 'completed'
   user_id: string;
 }
@@ -26,6 +27,26 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
   const [searchText, setSearchText] = useState(''); // Ny state for søk
+
+  // Kategori-alternativer (samme som i CreateTaskScreen og TaskDetailScreen)
+  const categoryOptions = [
+    { value: 'Arbeid', label: '💼 Arbeid', color: '#007AFF' },
+    { value: 'Personlig', label: '👤 Personlig', color: '#4CAF50' },
+    { value: 'Helse', label: '🏃‍♂️ Helse', color: '#FF9800' },
+    { value: 'Økonomi', label: '💰 Økonomi', color: '#9C27B0' },
+    { value: 'Utdanning', label: '📚 Utdanning', color: '#2196F3' },
+    { value: 'Familie', label: '👨‍👩‍👧‍👦 Familie', color: '#E91E63' },
+    { value: 'Hobby', label: '🎨 Hobby', color: '#FF5722' },
+    { value: 'Annet', label: '📝 Annet', color: '#607D8B' }
+  ];
+
+  // Finn kategori-info basert på kategori-verdi
+  const getCategoryInfo = (categoryValue?: string) => {
+    if (!categoryValue) {
+      return categoryOptions[1]; // Default til 'Personlig' hvis kategori mangler
+    }
+    return categoryOptions.find(cat => cat.value === categoryValue) || categoryOptions[1];
+  };
 
   // Hent oppgaver fra database (med optional refresh parameter)
   const fetchTasks = async (isRefreshing = false) => {
@@ -288,10 +309,11 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     </View>
   );
 
-  // Vis en enkelt oppgave med deadline-varsler
+  // Vis en enkelt oppgave med deadline-varsler og KATEGORI
   const renderTask = ({ item }: { item: Task }) => {
     const deadlineInfo = getDeadlineStatus(item.due_date);
     const isCompleted = item.status === 'completed';
+    const categoryInfo = getCategoryInfo(item.category);
     
     return (
       <View style={[
@@ -302,7 +324,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         !isCompleted && { borderLeftWidth: 4, borderLeftColor: deadlineInfo.color }
       ]}>
         <TouchableOpacity onPress={() => openTask(item.id)} style={styles.taskContent}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Text style={[
               styles.taskTitle,
               // Gjør fullførte oppgaver mindre fremtredende
@@ -336,6 +358,15 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
             )}
           </View>
           
+          {/* NY: Kategori-visning med farge og ikon */}
+          <View style={styles.categoryContainer}>
+            <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color }]}>
+              <Text style={styles.categoryBadgeText}>
+                {categoryInfo.label}
+              </Text>
+            </View>
+          </View>
+          
           <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
           <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
           <Text style={[
@@ -360,19 +391,9 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         
         <TouchableOpacity 
           style={styles.deleteButton}
-          onPress={() => {
-            console.log('🟥 DIREKTE SLETTING - item.id:', item.id);
-            handleDeleteTask(item.id);
-          }}
-        >
-          <Text style={styles.deleteButtonText}>Slett direkte</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.deleteButton, { backgroundColor: '#ff8800', marginTop: 5 }]}
           onPress={() => confirmDelete(item.id, item.title)}
         >
-          <Text style={styles.deleteButtonText}>Slett (bekreft)</Text>
+          <Text style={styles.deleteButtonText}>🗑️ Slett</Text>
         </TouchableOpacity>
       </View>
     );
@@ -616,5 +637,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  // NY: Kategori-styling
+  categoryContainer: {
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 5,
+  },
+  categoryBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

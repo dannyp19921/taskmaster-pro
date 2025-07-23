@@ -9,6 +9,7 @@ interface Task {
   title: string;
   due_date: string;
   priority: string;
+  category: string; // Legg til kategori
   status: string;
   user_id: string;
 }
@@ -18,12 +19,14 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Medium');
+  const [category, setCategory] = useState('Personlig'); // Ny state for kategori
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false); // Ny state
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [saving, setSaving] = useState(false); // Loading state for save button
+  const [saving, setSaving] = useState(false);
 
   const { taskId } = route.params;
 
@@ -42,6 +45,23 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     // Parse YYYY-MM-DD string til lokale dato-komponenter
     const [year, month, day] = dateString.split('-');
     return `${day}.${month}.${year}`;
+  };
+
+  // Kategori-alternativer (samme som CreateTaskScreen)
+  const categoryOptions = [
+    { value: 'Arbeid', label: '💼 Arbeid', color: '#007AFF' },
+    { value: 'Personlig', label: '👤 Personlig', color: '#4CAF50' },
+    { value: 'Helse', label: '🏃‍♂️ Helse', color: '#FF9800' },
+    { value: 'Økonomi', label: '💰 Økonomi', color: '#9C27B0' },
+    { value: 'Utdanning', label: '📚 Utdanning', color: '#2196F3' },
+    { value: 'Familie', label: '👨‍👩‍👧‍👦 Familie', color: '#E91E63' },
+    { value: 'Hobby', label: '🎨 Hobby', color: '#FF5722' },
+    { value: 'Annet', label: '📝 Annet', color: '#607D8B' }
+  ];
+
+  // Finn kategori-info basert på valgt kategori
+  const getCategoryInfo = (categoryValue: string) => {
+    return categoryOptions.find(cat => cat.value === categoryValue) || categoryOptions[1];
   };
 
   // Enkel dato-validering
@@ -77,6 +97,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       setTitle(data.title);
       setDueDate(data.due_date);
       setPriority(data.priority);
+      setCategory(data.category || 'Personlig'); // Sett kategori med fallback
       setCompleted(data.status === 'completed');
       
       // Sett selectedDate basert på oppgavens due_date
@@ -116,6 +137,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           title: title.trim(),
           due_date: dueDate,
           priority: priority,
+          category: category, // Legg til kategori
           status: completed ? 'completed' : 'open',
         })
         .eq('id', taskId);
@@ -219,6 +241,49 @@ export default function TaskDetailScreen({ navigation, route }: any) {
               🟢 Lav
             </Text>
           </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  // Kategori dropdown (samme som CreateTaskScreen)
+  const renderCategoryPicker = () => (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity 
+        style={[styles.dropdownButton, { borderLeftWidth: 4, borderLeftColor: getCategoryInfo(category).color }]}
+        onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+      >
+        <Text style={styles.dropdownButtonText}>
+          {getCategoryInfo(category).label}
+        </Text>
+        <Text style={styles.dropdownArrow}>
+          {showCategoryPicker ? '▲' : '▼'}
+        </Text>
+      </TouchableOpacity>
+
+      {showCategoryPicker && (
+        <View style={styles.dropdownOptions}>
+          {categoryOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.dropdownOption,
+                category === option.value && styles.dropdownOptionActive,
+                { borderLeftWidth: 4, borderLeftColor: option.color }
+              ]}
+              onPress={() => {
+                setCategory(option.value);
+                setShowCategoryPicker(false);
+              }}
+            >
+              <Text style={[
+                styles.dropdownOptionText,
+                category === option.value && styles.dropdownOptionTextActive
+              ]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
     </View>
@@ -397,6 +462,12 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Prioritet *</Text>
         {renderPriorityPicker()}
+      </View>
+
+      {/* Kategori dropdown */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Kategori *</Text>
+        {renderCategoryPicker()}
       </View>
 
       {/* Completed checkbox */}

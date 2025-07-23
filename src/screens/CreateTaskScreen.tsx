@@ -8,13 +8,32 @@ export default function CreateTaskScreen({ navigation }: any) {
     const [title, setTitle] = useState(''); 
     const [dueDate, setDueDate] = useState(''); 
     const [priority, setPriority] = useState('Medium');
+    const [category, setCategory] = useState('Personlig'); // Ny state for kategori
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false); // Ny state for kategori dropdown
     const [showCalendar, setShowCalendar] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [saving, setSaving] = useState(false); // Loading state for save button
+    const [saving, setSaving] = useState(false);
 
     // Prioritet-alternativer
     const priorityOptions = ['High', 'Medium', 'Low'];
+
+    // Kategori-alternativer med ikoner og farger
+    const categoryOptions = [
+        { value: 'Arbeid', label: '💼 Arbeid', color: '#007AFF' },
+        { value: 'Personlig', label: '👤 Personlig', color: '#4CAF50' },
+        { value: 'Helse', label: '🏃‍♂️ Helse', color: '#FF9800' },
+        { value: 'Økonomi', label: '💰 Økonomi', color: '#9C27B0' },
+        { value: 'Utdanning', label: '📚 Utdanning', color: '#2196F3' },
+        { value: 'Familie', label: '👨‍👩‍👧‍👦 Familie', color: '#E91E63' },
+        { value: 'Hobby', label: '🎨 Hobby', color: '#FF5722' },
+        { value: 'Annet', label: '📝 Annet', color: '#607D8B' }
+    ];
+
+    // Finn kategori-info basert på valgt kategori
+    const getCategoryInfo = (categoryValue: string) => {
+        return categoryOptions.find(cat => cat.value === categoryValue) || categoryOptions[1]; // Default til Personlig
+    };
 
     // Formatter dato til YYYY-MM-DD (lokal tid, ikke UTC)
     const formatDate = (date: Date) => {
@@ -79,7 +98,8 @@ export default function CreateTaskScreen({ navigation }: any) {
                     user_id: user.id, 
                     title: title.trim(), 
                     due_date: dueDate, 
-                    priority: priority, 
+                    priority: priority,
+                    category: category, // Legg til kategori
                     status: 'open', 
                 },
             ]);
@@ -177,6 +197,49 @@ export default function CreateTaskScreen({ navigation }: any) {
                             🟢 Lav
                         </Text>
                     </TouchableOpacity>
+                </View>
+            )}
+        </View>
+    );
+
+    // Kategori dropdown
+    const renderCategoryPicker = () => (
+        <View style={styles.dropdownContainer}>
+            <TouchableOpacity 
+                style={[styles.dropdownButton, { borderLeftWidth: 4, borderLeftColor: getCategoryInfo(category).color }]}
+                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+            >
+                <Text style={styles.dropdownButtonText}>
+                    {getCategoryInfo(category).label}
+                </Text>
+                <Text style={styles.dropdownArrow}>
+                    {showCategoryPicker ? '▲' : '▼'}
+                </Text>
+            </TouchableOpacity>
+
+            {showCategoryPicker && (
+                <View style={styles.dropdownOptions}>
+                    {categoryOptions.map((option) => (
+                        <TouchableOpacity
+                            key={option.value}
+                            style={[
+                                styles.dropdownOption,
+                                category === option.value && styles.dropdownOptionActive,
+                                { borderLeftWidth: 4, borderLeftColor: option.color }
+                            ]}
+                            onPress={() => {
+                                setCategory(option.value);
+                                setShowCategoryPicker(false);
+                            }}
+                        >
+                            <Text style={[
+                                styles.dropdownOptionText,
+                                category === option.value && styles.dropdownOptionTextActive
+                            ]}>
+                                {option.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             )}
         </View>
@@ -348,8 +411,14 @@ export default function CreateTaskScreen({ navigation }: any) {
                 {renderPriorityPicker()}
             </View>
 
-            {/* Ekstra spacing før knapper når dropdown er åpen */}
-            {showPriorityPicker && <View style={{ height: 20 }} />}
+            {/* Kategori dropdown */}
+            <View style={styles.inputContainer}>
+                <Text style={styles.label}>Kategori *</Text>
+                {renderCategoryPicker()}
+            </View>
+
+            {/* Ekstra spacing når dropdowns er åpne */}
+            {(showPriorityPicker || showCategoryPicker) && <View style={{ height: 20 }} />}
 
             {/* Action knapper */}
             <View style={styles.buttonContainer}>
