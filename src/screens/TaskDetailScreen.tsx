@@ -1,7 +1,7 @@
 // /src/screens/TaskDetailScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
 import { supabase } from '../services/supabase';
 
 interface Task {
@@ -21,8 +21,9 @@ export default function TaskDetailScreen({ navigation, route }: any) {
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false); // Kalender state
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Valgt dato
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [saving, setSaving] = useState(false); // Loading state for save button
 
   const { taskId } = route.params;
 
@@ -106,6 +107,9 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     }
 
     try {
+      setSaving(true); // Start loading
+      console.log('💾 Lagrer endringer for oppgave:', taskId);
+
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -128,6 +132,8 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     } catch (error) {
       console.log('💥 Uventet feil ved lagring:', error);
       alert('En uventet feil oppstod');
+    } finally {
+      setSaving(false); // Stop loading
     }
   };
 
@@ -410,16 +416,37 @@ export default function TaskDetailScreen({ navigation, route }: any) {
 
       {/* Action knapper */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveTask}>
-          <Text style={styles.buttonText}>Lagre endringer</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, saving && styles.buttonLoading]} 
+          onPress={handleSaveTask}
+          disabled={saving}
+        >
+          {saving ? (
+            <View style={styles.buttonContent}>
+              <ActivityIndicator size="small" color="#fff" style={styles.spinner} />
+              <Text style={styles.buttonText}>Lagrer...</Text>
+            </View>
+          ) : (
+            <Text style={styles.buttonText}>Lagre endringer</Text>
+          )}
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteTask}>
+        <TouchableOpacity 
+          style={[styles.deleteButton, saving && styles.buttonDisabled]} 
+          onPress={handleDeleteTask}
+          disabled={saving}
+        >
           <Text style={styles.buttonText}>Slett oppgave</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButtonText}>Avbryt</Text>
+        <TouchableOpacity 
+          style={[styles.cancelButton, saving && styles.buttonDisabled]} 
+          onPress={() => navigation.goBack()}
+          disabled={saving}
+        >
+          <Text style={[styles.cancelButtonText, saving && styles.disabledText]}>
+            Avbryt
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -723,5 +750,23 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Loading states styling
+  buttonLoading: {
+    opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinner: {
+    marginRight: 8,
+  },
+  disabledText: {
+    color: '#999',
   },
 });

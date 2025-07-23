@@ -1,7 +1,7 @@
 // /src/screens/CreateTaskScreen.tsx
 
 import React, { useState } from 'react'; 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native'; 
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native'; 
 import { supabase } from '../services/supabase'; 
 
 export default function CreateTaskScreen({ navigation }: any) {
@@ -9,24 +9,28 @@ export default function CreateTaskScreen({ navigation }: any) {
     const [dueDate, setDueDate] = useState(''); 
     const [priority, setPriority] = useState('Medium');
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
-    const [showCalendar, setShowCalendar] = useState(false); // Ny state for kalender
-    const [selectedDate, setSelectedDate] = useState(new Date()); // Dagens dato som standard
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [saving, setSaving] = useState(false); // Loading state for save button
 
     // Prioritet-alternativer
     const priorityOptions = ['High', 'Medium', 'Low'];
 
-    // Formatter dato til YYYY-MM-DD
+    // Formatter dato til YYYY-MM-DD (lokal tid, ikke UTC)
     const formatDate = (date: Date) => {
-        return date.toISOString().split('T')[0];
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
 
     // Formatter dato til visning (norsk format)
-    const formatDateDisplay = (date: Date) => {
-        return date.toLocaleDateString('no-NO', {
-            day: '2-digit',
-            month: '2-digit', 
-            year: 'numeric'
-        });
+    const formatDateDisplay = (dateString: string) => {
+        if (!dateString) return '';
+        
+        // Parse YYYY-MM-DD string til lokale dato-komponenter
+        const [year, month, day] = dateString.split('-');
+        return `${day}.${month}.${year}`;
     };
 
     // Enkel dato-validering
@@ -55,7 +59,8 @@ export default function CreateTaskScreen({ navigation }: any) {
         }
 
         try {
-            console.log('📡 Henter bruker...');
+            console.log('📝 Oppretter oppgave...');
+            setSaving(true); // Start loading
 
             // Hent innlogget bruker
             const { data: { user }, error: userError } = await supabase.auth.getUser(); 
@@ -94,6 +99,8 @@ export default function CreateTaskScreen({ navigation }: any) {
         } catch (error) {
             console.log('💥 Uventet feil:', error);
             alert('En uventet feil oppstod: ' + error);
+        } finally {
+            setSaving(false); // Stop loading
         }
     }; 
 
@@ -326,7 +333,7 @@ export default function CreateTaskScreen({ navigation }: any) {
                     onPress={() => setShowCalendar(true)}
                 >
                     <Text style={styles.datePickerText}>
-                        {dueDate ? formatDateDisplay(new Date(dueDate)) : 'Velg dato'}
+                        {dueDate ? formatDateDisplay(dueDate) : 'Velg dato'}
                     </Text>
                     <Text style={styles.calendarIcon}>📅</Text>
                 </TouchableOpacity>
@@ -346,15 +353,29 @@ export default function CreateTaskScreen({ navigation }: any) {
 
             {/* Action knapper */}
             <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.createButton} onPress={handleCreateTask}>
-                    <Text style={styles.createButtonText}>Lagre oppgave</Text>
+                <TouchableOpacity 
+                    style={[styles.createButton, saving && styles.buttonLoading]} 
+                    onPress={handleCreateTask}
+                    disabled={saving}
+                >
+                    {saving ? (
+                        <View style={styles.buttonContent}>
+                            <ActivityIndicator size="small" color="#fff" style={styles.spinner} />
+                            <Text style={styles.createButtonText}>Lagrer...</Text>
+                        </View>
+                    ) : (
+                        <Text style={styles.createButtonText}>Lagre oppgave</Text>
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                    style={styles.cancelButton} 
+                    style={[styles.cancelButton, saving && styles.buttonDisabled]} 
                     onPress={() => navigation.goBack()}
+                    disabled={saving}
                 >
-                    <Text style={styles.cancelButtonText}>Avbryt</Text>
+                    <Text style={[styles.cancelButtonText, saving && styles.disabledText]}>
+                        Avbryt
+                    </Text>
                 </TouchableOpacity>
             </View>
 
@@ -598,5 +619,23 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 16,
         fontWeight: '600',
+    },
+    // Loading states styling
+    buttonLoading: {
+        opacity: 0.7,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    spinner: {
+        marginRight: 8,
+    },
+    disabledText: {
+        color: '#999',
     },
 });

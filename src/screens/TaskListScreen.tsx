@@ -1,7 +1,7 @@
 // /src/screens/TaskListScreen.tsx - Oppryddet versjon
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 
@@ -22,14 +22,19 @@ interface TaskListScreenProps {
 export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh state
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
   const [searchText, setSearchText] = useState(''); // Ny state for søk
 
-  // Hent oppgaver fra database
-  const fetchTasks = async () => {
+  // Hent oppgaver fra database (med optional refresh parameter)
+  const fetchTasks = async (isRefreshing = false) => {
     try {
-      console.log('📡 Henter oppgaver...');
+      if (isRefreshing) {
+        console.log('🔄 Refresher oppgaver...');
+      } else {
+        console.log('📡 Henter oppgaver...');
+      }
       
       // Sjekk om bruker er innlogget
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -48,7 +53,9 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
 
       if (error) {
         console.log('❌ Feil ved henting:', error.message);
-        Alert.alert('Feil', 'Kunne ikke hente oppgaver');
+        if (!isRefreshing) {
+          Alert.alert('Feil', 'Kunne ikke hente oppgaver');
+        }
         return;
       }
 
@@ -56,9 +63,15 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       setTasks(data || []);
     } catch (error) {
       console.log('💥 Uventet feil:', error);
-      Alert.alert('Feil', 'En uventet feil oppstod');
+      if (!isRefreshing) {
+        Alert.alert('Feil', 'En uventet feil oppstod');
+      }
     } finally {
-      setLoading(false);
+      if (isRefreshing) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -102,6 +115,12 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     navigation.navigate('TaskDetail', { taskId });
   };
 
+  // Pull-to-refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTasks(true);
+  };
+
   // Last oppgaver når skjermen lastes ELLER kommer i fokus
   useEffect(() => {
     fetchTasks();
@@ -113,7 +132,8 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
       fetchTasks();
     }, [])
-  )
+  );
+
   // Enkle sortering-knapper
   const renderSortButtons = () => (
     <View style={styles.sortContainer}>
@@ -372,7 +392,10 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       {renderSortButtons()}
 
       {loading ? (
-        <Text style={styles.loadingText}>Laster oppgaver...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Laster oppgaver...</Text>
+        </View>
       ) : getFilteredSearchedAndSortedTasks().length === 0 ? (
         <Text style={styles.emptyText}>
           {searchText.trim() 
@@ -383,10 +406,18 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         </Text>
       ) : (
         <FlatList
-          data={getFilteredSearchedAndSortedTasks()} // Bruk kombinert søk, filter og sortering
+          data={getFilteredSearchedAndSortedTasks()}
           keyExtractor={(item) => item.id}
           renderItem={renderTask}
           style={styles.taskList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#007AFF']} // Android
+              tintColor="#007AFF" // iOS
+            />
+          }
         />
       )}
 
@@ -416,7 +447,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     color: '#666',
-    marginTop: 50,
+    marginTop: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 50,
   },
   emptyText: {
     textAlign: 'center',
