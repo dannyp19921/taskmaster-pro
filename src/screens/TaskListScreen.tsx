@@ -1,7 +1,7 @@
 // /src/screens/TaskListScreen.tsx - Med kategori-visning
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 
@@ -25,6 +25,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh state
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all'); // Ny state for kategori-filter
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
   const [searchText, setSearchText] = useState(''); // Ny state for søk
 
@@ -237,7 +238,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     </View>
   );
 
-  // Filter, søk og sorteringslogikk kombinert
+  // Filter, søk og sorteringslogikk kombinert (MED KATEGORI-FILTER)
   const getFilteredSearchedAndSortedTasks = () => {
     // Først filtrer etter status
     let filteredTasks = tasks;
@@ -250,6 +251,14 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         break;
       default:
         filteredTasks = tasks;
+    }
+
+    // Så filtrer etter kategori
+    if (categoryFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(task => {
+        const taskCategory = task.category || 'Personlig'; // Fallback til Personlig
+        return taskCategory === categoryFilter;
+      });
     }
 
     // Så søk i tittel
@@ -308,6 +317,87 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       </TouchableOpacity>
     </View>
   );
+
+  // NY: Kategori-filter knapper med horizontal scroll
+  const renderCategoryFilterButtons = () => {
+    // Beregn antall oppgaver per kategori (basert på gjeldende status-filter)
+    let relevantTasks = tasks;
+    switch (filter) {
+      case 'active':
+        relevantTasks = tasks.filter(task => task.status === 'open');
+        break;
+      case 'completed':
+        relevantTasks = tasks.filter(task => task.status === 'completed');
+        break;
+      default:
+        relevantTasks = tasks;
+    }
+
+    const getCategoryCount = (categoryValue: string) => {
+      if (categoryValue === 'all') {
+        return relevantTasks.length;
+      }
+      return relevantTasks.filter(task => {
+        const taskCategory = task.category || 'Personlig';
+        return taskCategory === categoryValue;
+      }).length;
+    };
+
+    return (
+      <View style={styles.categoryFilterContainer}>
+        <Text style={styles.categoryFilterLabel}>Kategori:</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilterScroll}
+          contentContainerStyle={styles.categoryFilterContent}
+        >
+          {/* Alle kategorier knapp */}
+          <TouchableOpacity
+            style={[
+              styles.categoryFilterButton,
+              categoryFilter === 'all' && styles.categoryFilterButtonActive,
+              { backgroundColor: categoryFilter === 'all' ? '#007AFF' : '#f0f0f0' }
+            ]}
+            onPress={() => setCategoryFilter('all')}
+          >
+            <Text style={[
+              styles.categoryFilterText,
+              categoryFilter === 'all' && styles.categoryFilterTextActive
+            ]}>
+              📋 Alle ({getCategoryCount('all')})
+            </Text>
+          </TouchableOpacity>
+
+          {/* Kategori-spesifikke knapper */}
+          {categoryOptions.map((category) => (
+            <TouchableOpacity
+              key={category.value}
+              style={[
+                styles.categoryFilterButton,
+                categoryFilter === category.value && styles.categoryFilterButtonActive,
+                { 
+                  backgroundColor: categoryFilter === category.value 
+                    ? category.color 
+                    : '#f0f0f0',
+                  borderColor: category.color,
+                  borderWidth: categoryFilter === category.value ? 0 : 1
+                }
+              ]}
+              onPress={() => setCategoryFilter(category.value)}
+            >
+              <Text style={[
+                styles.categoryFilterText,
+                categoryFilter === category.value && styles.categoryFilterTextActive
+              ]}>
+                {category.label} ({getCategoryCount(category.value)})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
 
   // Vis en enkelt oppgave med deadline-varsler og KATEGORI
   const renderTask = ({ item }: { item: Task }) => {
@@ -409,6 +499,9 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       {/* Filter-knapper */}
       {renderFilterButtons()}
 
+      {/* NY: Kategori-filter knapper */}
+      {renderCategoryFilterButtons()}
+
       {/* Sortering-knapper */}
       {renderSortButtons()}
 
@@ -421,9 +514,11 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         <Text style={styles.emptyText}>
           {searchText.trim() 
             ? `Ingen oppgaver funnet for "${searchText}"` 
-            : filter === 'all' ? 'Ingen oppgaver ennå' : 
-              filter === 'active' ? 'Ingen aktive oppgaver' : 
-              'Ingen fullførte oppgaver'}
+            : categoryFilter !== 'all' 
+              ? `Ingen oppgaver i kategorien "${getCategoryInfo(categoryFilter).label}"`
+              : filter === 'all' ? 'Ingen oppgaver ennå' : 
+                filter === 'active' ? 'Ingen aktive oppgaver' : 
+                'Ingen fullførte oppgaver'}
         </Text>
       ) : (
         <FlatList
@@ -653,5 +748,39 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // NY: Kategori-filter styling
+  categoryFilterContainer: {
+    marginBottom: 15,
+  },
+  categoryFilterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  categoryFilterScroll: {
+    flexGrow: 0,
+  },
+  categoryFilterContent: {
+    paddingRight: 10,
+  },
+  categoryFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    elevation: 2,
+  },
+  categoryFilterButtonActive: {
+    elevation: 4,
+  },
+  categoryFilterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  categoryFilterTextActive: {
+    color: '#fff',
   },
 });
