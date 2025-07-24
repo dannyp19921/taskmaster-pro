@@ -1,4 +1,4 @@
-// /src/screens/TaskListScreen.tsx - Med kategori-visning
+// /src/screens/TaskListScreen.tsx - Med swipe-to-delete funksjonalitet
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
@@ -28,6 +28,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>('all'); // Ny state for kategori-filter
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
   const [searchText, setSearchText] = useState(''); // Ny state for søk
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null); // Track hvilket item som er swiped
 
   // Kategori-alternativer (samme som i CreateTaskScreen og TaskDetailScreen)
   const categoryOptions = [
@@ -111,6 +112,8 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       }
 
       console.log('✅ Slettesuksess! Henter oppgaver på nytt...');
+      // Skjul swipe først, så hent oppgaver
+      setSwipedItemId(null);
       await fetchTasks(); // Oppdater liste - samme som før
     } catch (err) {
       console.log('💥 Uventet feil i handleDeleteTask:', err);
@@ -129,17 +132,23 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       handleDeleteTask(taskId);
     } else {
       console.log('❌ BEKREFTELSE AVBRUTT');
+      // Skjul swipe hvis bruker avbryter
+      setSwipedItemId(null);
     }
   };
 
   // Åpne oppgave for redigering
   const openTask = (taskId: string) => {
+    // Skjul swipe først
+    setSwipedItemId(null);
     navigation.navigate('TaskDetail', { taskId });
   };
 
   // Pull-to-refresh handler
   const onRefresh = () => {
     setRefreshing(true);
+    // Skjul swipe under refresh
+    setSwipedItemId(null);
     fetchTasks(true);
   };
 
@@ -152,6 +161,7 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   useFocusEffect(
     useCallback(() => {
       console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
+      setSwipedItemId(null); // Skjul swipe når skjerm kommer i fokus
       fetchTasks();
     }, [])
   );
@@ -399,92 +409,143 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     );
   };
 
-  // Vis en enkelt oppgave med deadline-varsler og KATEGORI
+  // NY: Swipeable task item med elegant design
   const renderTask = ({ item }: { item: Task }) => {
     const deadlineInfo = getDeadlineStatus(item.due_date);
     const isCompleted = item.status === 'completed';
     const categoryInfo = getCategoryInfo(item.category);
+    const isItemSwiped = swipedItemId === item.id;
     
     return (
-      <View style={[
-        styles.taskCard,
-        // Grå ut fullførte oppgaver
-        isCompleted && { backgroundColor: '#f8f8f8' },
-        // Fargekoding for deadline (kun på aktive oppgaver)
-        !isCompleted && { borderLeftWidth: 4, borderLeftColor: deadlineInfo.color }
-      ]}>
-        <TouchableOpacity onPress={() => openTask(item.id)} style={styles.taskContent}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={[
-              styles.taskTitle,
-              // Gjør fullførte oppgaver mindre fremtredende
-              isCompleted && { 
-                textDecorationLine: 'line-through', 
-                color: '#999' 
+      <View style={styles.taskItemContainer}>
+        {/* Rød bakgrunn som vises når swiped */}
+        {isItemSwiped && (
+          <View style={styles.deleteBackground}>
+            <Text style={styles.deleteBackgroundIcon}>🗑️</Text>
+            <Text style={styles.deleteBackgroundText}>Slett</Text>
+          </View>
+        )}
+        
+        {/* Hoved-oppgave kort */}
+        <View style={[
+          styles.taskCard,
+          // Grå ut fullførte oppgaver
+          isCompleted && { backgroundColor: '#f8f8f8' },
+          // Fargekoding for deadline (kun på aktive oppgaver)
+          !isCompleted && { borderLeftWidth: 4, borderLeftColor: deadlineInfo.color },
+          // Swipe-effekt
+          isItemSwiped && styles.taskCardSwiped
+        ]}>
+          {/* Hoved oppgave-innhold */}
+          <TouchableOpacity 
+            onPress={() => {
+              // Toggle swipe-modus med vanlig klikk
+              if (isItemSwiped) {
+                setSwipedItemId(null); // Skjul hvis allerede swiped
+              } else {
+                setSwipedItemId(item.id); // Vis swipe-actions
               }
-            ]}>
-              {item.title}
-            </Text>
-            {isCompleted && (
-              <Text style={{ 
-                marginLeft: 10, 
-                color: '#4CAF50', 
-                fontSize: 16, 
-                fontWeight: 'bold' 
-              }}>
-                ✓
-              </Text>
-            )}
-            {/* Deadline badge (kun på aktive oppgaver) */}
-            {!isCompleted && deadlineInfo.badge && (
-              <View style={[
-                styles.deadlineBadge, 
-                { backgroundColor: deadlineInfo.color }
-              ]}>
-                <Text style={styles.deadlineBadgeText}>
-                  {deadlineInfo.badge}
+            }}
+            style={styles.taskContent}
+          >
+            {/* Header med titel og swipe-indikator */}
+            <View style={styles.taskHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Text style={[
+                  styles.taskTitle,
+                  // Gjør fullførte oppgaver mindre fremtredende
+                  isCompleted && { 
+                    textDecorationLine: 'line-through', 
+                    color: '#999' 
+                  }
+                ]}>
+                  {item.title}
+                </Text>
+                {isCompleted && (
+                  <Text style={{ 
+                    marginLeft: 10, 
+                    color: '#4CAF50', 
+                    fontSize: 16, 
+                    fontWeight: 'bold' 
+                  }}>
+                    ✓
+                  </Text>
+                )}
+                {/* Deadline badge (kun på aktive oppgaver) */}
+                {!isCompleted && deadlineInfo.badge && (
+                  <View style={[
+                    styles.deadlineBadge, 
+                    { backgroundColor: deadlineInfo.color }
+                  ]}>
+                    <Text style={styles.deadlineBadgeText}>
+                      {deadlineInfo.badge}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              {/* Swipe-indikator */}
+              <View style={styles.swipeIndicator}>
+                <Text style={[
+                  styles.swipeIndicatorText,
+                  isItemSwiped && styles.swipeIndicatorActive
+                ]}>
+                  {isItemSwiped ? '✕' : '⋯'}
                 </Text>
               </View>
-            )}
-          </View>
-          
-          {/* NY: Kategori-visning med farge og ikon */}
-          <View style={styles.categoryContainer}>
-            <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color }]}>
-              <Text style={styles.categoryBadgeText}>
-                {categoryInfo.label}
-              </Text>
             </View>
-          </View>
-          
-          <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
-          <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
-          <Text style={[
-            styles.taskDetail,
-            isCompleted ? { color: '#4CAF50' } : { color: '#ff8800' }
-          ]}>
-            Status: {isCompleted ? 'Fullført' : 'Aktiv'}
-          </Text>
-          
-          {/* Deadline info (kun på aktive oppgaver) */}
-          {!isCompleted && (
-            <Text style={[styles.taskDetail, { color: deadlineInfo.color, fontWeight: '600' }]}>
-              {deadlineInfo.status === 'overdue' && `Utløpt for ${deadlineInfo.days} dag${deadlineInfo.days > 1 ? 'er' : ''} siden`}
-              {deadlineInfo.status === 'today' && 'Utløper i dag!'}
-              {deadlineInfo.status === 'tomorrow' && 'Utløper i morgen'}
-              {deadlineInfo.status === 'soon' && `${deadlineInfo.days} dager igjen`}
-              {deadlineInfo.status === 'week' && `${deadlineInfo.days} dager igjen`}
-              {deadlineInfo.status === 'normal' && `${deadlineInfo.days} dager igjen`}
+            
+            {/* Kategori-visning med farge og ikon */}
+            <View style={styles.categoryContainer}>
+              <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color }]}>
+                <Text style={styles.categoryBadgeText}>
+                  {categoryInfo.label}
+                </Text>
+              </View>
+            </View>
+            
+            <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
+            <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
+            <Text style={[
+              styles.taskDetail,
+              isCompleted ? { color: '#4CAF50' } : { color: '#ff8800' }
+            ]}>
+              Status: {isCompleted ? 'Fullført' : 'Aktiv'}
             </Text>
+            
+            {/* Deadline info (kun på aktive oppgaver) */}
+            {!isCompleted && (
+              <Text style={[styles.taskDetail, { color: deadlineInfo.color, fontWeight: '600' }]}>
+                {deadlineInfo.status === 'overdue' && `Utløpt for ${deadlineInfo.days} dag${deadlineInfo.days > 1 ? 'er' : ''} siden`}
+                {deadlineInfo.status === 'today' && 'Utløper i dag!'}
+                {deadlineInfo.status === 'tomorrow' && 'Utløper i morgen'}
+                {deadlineInfo.status === 'soon' && `${deadlineInfo.days} dager igjen`}
+                {deadlineInfo.status === 'week' && `${deadlineInfo.days} dager igjen`}
+                {deadlineInfo.status === 'normal' && `${deadlineInfo.days} dager igjen`}
+              </Text>
+            )}
+          </TouchableOpacity>
+          
+          {/* Edit knapp (separate fra swipe) */}
+          <TouchableOpacity 
+            onPress={() => openTask(item.id)}
+            style={styles.editButton}
+          >
+            <Text style={styles.editButtonText}>✏️ Rediger</Text>
+          </TouchableOpacity>
+          
+          {/* Swipe delete actions */}
+          {isItemSwiped && (
+            <View style={styles.swipeActions}>
+              <TouchableOpacity 
+                style={styles.swipeDeleteButton}
+                onPress={() => confirmDelete(item.id, item.title)}
+              >
+                <Text style={styles.swipeDeleteText}>🗑️</Text>
+              </TouchableOpacity>
+            </View>
           )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.deleteButton}
-          onPress={() => confirmDelete(item.id, item.title)}
-        >
-          <Text style={styles.deleteButtonText}>🗑️ Slett</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -544,6 +605,8 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
               tintColor="#007AFF" // iOS
             />
           }
+          // Skjul swipe når scroll
+          onScrollBeginDrag={() => setSwipedItemId(null)}
         />
       )}
 
@@ -590,18 +653,109 @@ const styles = StyleSheet.create({
   taskList: {
     flex: 1,
   },
+  // NY: Swipe-to-delete styling
+  taskItemContainer: {
+    marginBottom: 10,
+    position: 'relative',
+  },
+  deleteBackground: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 8,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  deleteBackgroundIcon: {
+    fontSize: 20,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  deleteBackgroundText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   taskCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    marginBottom: 10,
     padding: 15,
     flexDirection: 'column',
-    // Kun elevation for alle plattformer - enklere og fungerer bedre
     elevation: 3,
+    position: 'relative',
+  },
+  taskCardSwiped: {
+    marginRight: 80, // Make room for delete button
+  },
+  taskSwipeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   taskContent: {
     flex: 1,
-    marginBottom: 10,
+    paddingBottom: 10,
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  swipeIndicator: {
+    marginLeft: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeIndicatorText: {
+    fontSize: 16,
+    color: '#999',
+    fontWeight: 'bold',
+  },
+  swipeIndicatorActive: {
+    color: '#ff4444',
+  },
+  editButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  swipeActions: {
+    position: 'absolute',
+    right: -80,
+    top: 0,
+    bottom: 0,
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeDeleteButton: {
+    backgroundColor: '#ff4444',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  swipeDeleteText: {
+    fontSize: 24,
+    color: '#fff',
   },
   taskTitle: {
     fontSize: 18,
@@ -613,16 +767,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 2,
-  },
-  deleteButton: {
-    backgroundColor: '#ff4444',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   createButton: {
     backgroundColor: '#007AFF',
