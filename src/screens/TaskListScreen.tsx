@@ -1,36 +1,33 @@
-// /src/screens/TaskListScreen.tsx - Med swipe-to-delete funksjonalitet
+// /src/screens/TaskListScreen.tsx - Med dark mode support (ren versjon)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
-// Type for oppgave - gjør koden mer forståelig
 interface Task {
   id: string;
   title: string;
   due_date: string;
   priority: string;
-  category?: string; // Legg til category som optional (for bakoverkompatibilitet)
-  status: string; // 'open' eller 'completed'
+  category?: string;
+  status: string;
   user_id: string;
 }
 
-interface TaskListScreenProps {
-  navigation: any; // Kan typeres mer spesifikt senere
-}
-
-export default function TaskListScreen({ navigation }: TaskListScreenProps) {
+export default function TaskListScreen({ navigation }: any) {
+  const { theme, isDarkMode } = useTheme();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh state
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all'); // Ny state for kategori-filter
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'none'>('date');
-  const [searchText, setSearchText] = useState(''); // Ny state for søk
-  const [swipedItemId, setSwipedItemId] = useState<string | null>(null); // Track hvilket item som er swiped
+  const [searchText, setSearchText] = useState('');
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
 
-  // Kategori-alternativer (samme som i CreateTaskScreen og TaskDetailScreen)
   const categoryOptions = [
     { value: 'Arbeid', label: '💼 Arbeid', color: '#007AFF' },
     { value: 'Personlig', label: '👤 Personlig', color: '#4CAF50' },
@@ -42,15 +39,13 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     { value: 'Annet', label: '📝 Annet', color: '#607D8B' }
   ];
 
-  // Finn kategori-info basert på kategori-verdi
   const getCategoryInfo = (categoryValue?: string) => {
     if (!categoryValue) {
-      return categoryOptions[1]; // Default til 'Personlig' hvis kategori mangler
+      return categoryOptions[1];
     }
     return categoryOptions.find(cat => cat.value === categoryValue) || categoryOptions[1];
   };
 
-  // Hent oppgaver fra database (med optional refresh parameter)
   const fetchTasks = async (isRefreshing = false) => {
     try {
       if (isRefreshing) {
@@ -59,7 +54,6 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         console.log('📡 Henter oppgaver...');
       }
       
-      // Sjekk om bruker er innlogget
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
@@ -67,7 +61,6 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         return;
       }
 
-      // Hent brukerens oppgaver
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -98,7 +91,6 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     }
   };
 
-  // Slett oppgave - bruker samme logikk som fungerte før
   const handleDeleteTask = async (taskId: string) => {
     console.log('🧨 HANDLEDELETETASK STARTET - taskId:', taskId);
 
@@ -112,19 +104,16 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       }
 
       console.log('✅ Slettesuksess! Henter oppgaver på nytt...');
-      // Skjul swipe først, så hent oppgaver
       setSwipedItemId(null);
-      await fetchTasks(); // Oppdater liste - samme som før
+      await fetchTasks();
     } catch (err) {
       console.log('💥 Uventet feil i handleDeleteTask:', err);
     }
   };
 
-  // Vis bekreftelse før sletting - enklere versjon som fungerer overalt
   const confirmDelete = (taskId: string, taskTitle: string) => {
     console.log('🟠 Trykket slett med bekreftelse på:', taskId);
     
-    // Enkel bekreftelse med confirm() - fungerer på alle plattformer
     const shouldDelete = confirm(`Er du sikker på at du vil slette "${taskTitle}"?`);
     
     if (shouldDelete) {
@@ -132,80 +121,37 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
       handleDeleteTask(taskId);
     } else {
       console.log('❌ BEKREFTELSE AVBRUTT');
-      // Skjul swipe hvis bruker avbryter
       setSwipedItemId(null);
     }
   };
 
-  // Åpne oppgave for redigering
   const openTask = (taskId: string) => {
-    // Skjul swipe først
     setSwipedItemId(null);
     navigation.navigate('TaskDetail', { taskId });
   };
 
-  // Pull-to-refresh handler
   const onRefresh = () => {
     setRefreshing(true);
-    // Skjul swipe under refresh
     setSwipedItemId(null);
     fetchTasks(true);
   };
 
-  // Last oppgaver når skjermen lastes ELLER kommer i fokus
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // Oppdater oppgaver hver gang skjermen kommer i fokus (f.eks. når du går tilbake fra TaskDetail)
   useFocusEffect(
     useCallback(() => {
       console.log('🔄 TaskListScreen kom i fokus - oppdaterer oppgaver');
-      setSwipedItemId(null); // Skjul swipe når skjerm kommer i fokus
+      setSwipedItemId(null);
       fetchTasks();
     }, [])
   );
 
-  // Enkle sortering-knapper
-  const renderSortButtons = () => (
-    <View style={styles.sortContainer}>
-      <Text style={styles.sortLabel}>Sorter:</Text>
-      
-      <TouchableOpacity
-        style={[styles.sortButton, sortBy === 'date' && styles.sortButtonActive]}
-        onPress={() => setSortBy('date')}
-      >
-        <Text style={[styles.sortButtonText, sortBy === 'date' && styles.sortButtonTextActive]}>
-          📅 Dato
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.sortButton, sortBy === 'priority' && styles.sortButtonActive]}
-        onPress={() => setSortBy('priority')}
-      >
-        <Text style={[styles.sortButtonText, sortBy === 'priority' && styles.sortButtonTextActive]}>
-          ⚡ Prioritet
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.sortButton, sortBy === 'none' && styles.sortButtonActive]}
-        onPress={() => setSortBy('none')}
-      >
-        <Text style={[styles.sortButtonText, sortBy === 'none' && styles.sortButtonTextActive]}>
-          📝 Standard
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // Deadline-logikk for å beregne status
   const getDeadlineStatus = (dueDate: string) => {
     const today = new Date();
     const deadline = new Date(dueDate);
     
-    // Reset tid for sammenligning (kun dato)
     today.setHours(0, 0, 0, 0);
     deadline.setHours(0, 0, 0, 0);
     
@@ -213,44 +159,21 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
     if (daysDiff < 0) {
-      return { status: 'overdue', days: Math.abs(daysDiff), color: '#ff4444', badge: 'UTLØPT' };
+      return { status: 'overdue', days: Math.abs(daysDiff), color: theme.overdue, badge: 'UTLØPT' };
     } else if (daysDiff === 0) {
-      return { status: 'today', days: 0, color: '#ff6b35', badge: 'I DAG!' };
+      return { status: 'today', days: 0, color: theme.today, badge: 'I DAG!' };
     } else if (daysDiff === 1) {
-      return { status: 'tomorrow', days: 1, color: '#ffa500', badge: 'I MORGEN' };
+      return { status: 'tomorrow', days: 1, color: theme.warning, badge: 'I MORGEN' };
     } else if (daysDiff <= 3) {
-      return { status: 'soon', days: daysDiff, color: '#ffcc00', badge: `${daysDiff} DAGER` };
+      return { status: 'soon', days: daysDiff, color: theme.soon, badge: `${daysDiff} DAGER` };
     } else if (daysDiff <= 7) {
-      return { status: 'week', days: daysDiff, color: '#4CAF50', badge: `${daysDiff} DAGER` };
+      return { status: 'week', days: daysDiff, color: theme.success, badge: `${daysDiff} DAGER` };
     } else {
-      return { status: 'normal', days: daysDiff, color: '#666', badge: null };
+      return { status: 'normal', days: daysDiff, color: theme.textTertiary, badge: null };
     }
   };
 
-  // Søkeboks komponent
-  const renderSearchBox = () => (
-    <View style={styles.searchContainer}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="🔍 Søk etter oppgaver..."
-        value={searchText}
-        onChangeText={setSearchText}
-        placeholderTextColor="#999"
-      />
-      {searchText.length > 0 && (
-        <TouchableOpacity 
-          style={styles.clearSearchButton}
-          onPress={() => setSearchText('')}
-        >
-          <Text style={styles.clearSearchText}>✕</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // Filter, søk og sorteringslogikk kombinert (MED KATEGORI-FILTER)
   const getFilteredSearchedAndSortedTasks = () => {
-    // Først filtrer etter status
     let filteredTasks = tasks;
     switch (filter) {
       case 'active':
@@ -263,153 +186,36 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
         filteredTasks = tasks;
     }
 
-    // Så filtrer etter kategori
     if (categoryFilter !== 'all') {
       filteredTasks = filteredTasks.filter(task => {
-        const taskCategory = task.category || 'Personlig'; // Fallback til Personlig
+        const taskCategory = task.category || 'Personlig';
         return taskCategory === categoryFilter;
       });
     }
 
-    // Så søk i tittel
     if (searchText.trim()) {
       filteredTasks = filteredTasks.filter(task =>
         task.title.toLowerCase().includes(searchText.toLowerCase().trim())
       );
     }
 
-    // Til slutt sorter
     switch (sortBy) {
       case 'priority':
         return filteredTasks.sort((a, b) => {
           const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
           const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
           const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-          return bPriority - aPriority; // Høyeste prioritet først
+          return bPriority - aPriority;
         });
       case 'date':
         return filteredTasks.sort((a, b) => {
-          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime(); // Nærmeste dato først
+          return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
         });
       default:
         return filteredTasks;
     }
   };
 
-  // Enkle filter-knapper
-  const renderFilterButtons = () => (
-    <View style={styles.filterContainer}>
-      <TouchableOpacity
-        style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
-        onPress={() => setFilter('all')}
-      >
-        <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
-          Alle ({tasks.length})
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.filterButton, filter === 'active' && styles.filterButtonActive]}
-        onPress={() => setFilter('active')}
-      >
-        <Text style={[styles.filterButtonText, filter === 'active' && styles.filterButtonTextActive]}>
-          Aktive ({tasks.filter(t => t.status === 'open').length})
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
-        onPress={() => setFilter('completed')}
-      >
-        <Text style={[styles.filterButtonText, filter === 'completed' && styles.filterButtonTextActive]}>
-          Fullført ({tasks.filter(t => t.status === 'completed').length})
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // NY: Kategori-filter knapper med horizontal scroll
-  const renderCategoryFilterButtons = () => {
-    // Beregn antall oppgaver per kategori (basert på gjeldende status-filter)
-    let relevantTasks = tasks;
-    switch (filter) {
-      case 'active':
-        relevantTasks = tasks.filter(task => task.status === 'open');
-        break;
-      case 'completed':
-        relevantTasks = tasks.filter(task => task.status === 'completed');
-        break;
-      default:
-        relevantTasks = tasks;
-    }
-
-    const getCategoryCount = (categoryValue: string) => {
-      if (categoryValue === 'all') {
-        return relevantTasks.length;
-      }
-      return relevantTasks.filter(task => {
-        const taskCategory = task.category || 'Personlig';
-        return taskCategory === categoryValue;
-      }).length;
-    };
-
-    return (
-      <View style={styles.categoryFilterContainer}>
-        <Text style={styles.categoryFilterLabel}>Kategori:</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryFilterScroll}
-          contentContainerStyle={styles.categoryFilterContent}
-        >
-          {/* Alle kategorier knapp */}
-          <TouchableOpacity
-            style={[
-              styles.categoryFilterButton,
-              categoryFilter === 'all' && styles.categoryFilterButtonActive,
-              { backgroundColor: categoryFilter === 'all' ? '#007AFF' : '#f0f0f0' }
-            ]}
-            onPress={() => setCategoryFilter('all')}
-          >
-            <Text style={[
-              styles.categoryFilterText,
-              categoryFilter === 'all' && styles.categoryFilterTextActive
-            ]}>
-              📋 Alle ({getCategoryCount('all')})
-            </Text>
-          </TouchableOpacity>
-
-          {/* Kategori-spesifikke knapper */}
-          {categoryOptions.map((category) => (
-            <TouchableOpacity
-              key={category.value}
-              style={[
-                styles.categoryFilterButton,
-                categoryFilter === category.value && styles.categoryFilterButtonActive,
-                { 
-                  backgroundColor: categoryFilter === category.value 
-                    ? category.color 
-                    : '#f0f0f0',
-                  borderColor: category.color,
-                  borderWidth: categoryFilter === category.value ? 0 : 1
-                }
-              ]}
-              onPress={() => setCategoryFilter(category.value)}
-            >
-              <Text style={[
-                styles.categoryFilterText,
-                categoryFilter === category.value && styles.categoryFilterTextActive
-              ]}>
-                {category.label} ({getCategoryCount(category.value)})
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    );
-  };
-
-  // NY: Swipeable task item med elegant design
   const renderTask = ({ item }: { item: Task }) => {
     const deadlineInfo = getDeadlineStatus(item.due_date);
     const isCompleted = item.status === 'completed';
@@ -418,45 +224,38 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
     
     return (
       <View style={styles.taskItemContainer}>
-        {/* Rød bakgrunn som vises når swiped */}
         {isItemSwiped && (
-          <View style={styles.deleteBackground}>
+          <View style={[styles.deleteBackground, { backgroundColor: theme.error }]}>
             <Text style={styles.deleteBackgroundIcon}>🗑️</Text>
             <Text style={styles.deleteBackgroundText}>Slett</Text>
           </View>
         )}
         
-        {/* Hoved-oppgave kort */}
         <View style={[
           styles.taskCard,
-          // Grå ut fullførte oppgaver
-          isCompleted && { backgroundColor: '#f8f8f8' },
-          // Fargekoding for deadline (kun på aktive oppgaver)
+          { backgroundColor: theme.cardBackground },
+          isCompleted && { opacity: 0.7 },
           !isCompleted && { borderLeftWidth: 4, borderLeftColor: deadlineInfo.color },
-          // Swipe-effekt
           isItemSwiped && styles.taskCardSwiped
         ]}>
-          {/* Hoved oppgave-innhold */}
           <TouchableOpacity 
             onPress={() => {
-              // Toggle swipe-modus med vanlig klikk
               if (isItemSwiped) {
-                setSwipedItemId(null); // Skjul hvis allerede swiped
+                setSwipedItemId(null);
               } else {
-                setSwipedItemId(item.id); // Vis swipe-actions
+                setSwipedItemId(item.id);
               }
             }}
             style={styles.taskContent}
           >
-            {/* Header med titel og swipe-indikator */}
             <View style={styles.taskHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <Text style={[
                   styles.taskTitle,
-                  // Gjør fullførte oppgaver mindre fremtredende
+                  { color: theme.textPrimary },
                   isCompleted && { 
                     textDecorationLine: 'line-through', 
-                    color: '#999' 
+                    color: theme.textTertiary 
                   }
                 ]}>
                   {item.title}
@@ -464,14 +263,13 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
                 {isCompleted && (
                   <Text style={{ 
                     marginLeft: 10, 
-                    color: '#4CAF50', 
+                    color: theme.completed, 
                     fontSize: 16, 
                     fontWeight: 'bold' 
                   }}>
                     ✓
                   </Text>
                 )}
-                {/* Deadline badge (kun på aktive oppgaver) */}
                 {!isCompleted && deadlineInfo.badge && (
                   <View style={[
                     styles.deadlineBadge, 
@@ -484,18 +282,20 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
                 )}
               </View>
               
-              {/* Swipe-indikator */}
-              <View style={styles.swipeIndicator}>
+              <View style={[
+                styles.swipeIndicator, 
+                { backgroundColor: isDarkMode ? '#4a4a4a' : '#f0f0f0' }
+              ]}>
                 <Text style={[
                   styles.swipeIndicatorText,
-                  isItemSwiped && styles.swipeIndicatorActive
+                  { color: theme.textTertiary },
+                  isItemSwiped && { color: theme.error }
                 ]}>
                   {isItemSwiped ? '✕' : '⋯'}
                 </Text>
               </View>
             </View>
             
-            {/* Kategori-visning med farge og ikon */}
             <View style={styles.categoryContainer}>
               <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.color }]}>
                 <Text style={styles.categoryBadgeText}>
@@ -504,16 +304,19 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
               </View>
             </View>
             
-            <Text style={styles.taskDetail}>Frist: {item.due_date}</Text>
-            <Text style={styles.taskDetail}>Prioritet: {item.priority}</Text>
+            <Text style={[styles.taskDetail, { color: theme.textSecondary }]}>
+              Frist: {item.due_date}
+            </Text>
+            <Text style={[styles.taskDetail, { color: theme.textSecondary }]}>
+              Prioritet: {item.priority}
+            </Text>
             <Text style={[
               styles.taskDetail,
-              isCompleted ? { color: '#4CAF50' } : { color: '#ff8800' }
+              { color: isCompleted ? theme.completed : theme.warning }
             ]}>
               Status: {isCompleted ? 'Fullført' : 'Aktiv'}
             </Text>
             
-            {/* Deadline info (kun på aktive oppgaver) */}
             {!isCompleted && (
               <Text style={[styles.taskDetail, { color: deadlineInfo.color, fontWeight: '600' }]}>
                 {deadlineInfo.status === 'overdue' && `Utløpt for ${deadlineInfo.days} dag${deadlineInfo.days > 1 ? 'er' : ''} siden`}
@@ -526,19 +329,17 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
             )}
           </TouchableOpacity>
           
-          {/* Edit knapp (separate fra swipe) */}
           <TouchableOpacity 
             onPress={() => openTask(item.id)}
-            style={styles.editButton}
+            style={[styles.editButton, { backgroundColor: theme.info }]}
           >
             <Text style={styles.editButtonText}>✏️ Rediger</Text>
           </TouchableOpacity>
           
-          {/* Swipe delete actions */}
           {isItemSwiped && (
             <View style={styles.swipeActions}>
               <TouchableOpacity 
-                style={styles.swipeDeleteButton}
+                style={[styles.swipeDeleteButton, { backgroundColor: theme.error }]}
                 onPress={() => confirmDelete(item.id, item.title)}
               >
                 <Text style={styles.swipeDeleteText}>🗑️</Text>
@@ -551,38 +352,220 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Mine oppgaver</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={styles.headerContainer}>
+        <Text style={[styles.header, { color: theme.textPrimary }]}>Mine oppgaver</Text>
+        <ThemeToggle />
+      </View>
 
-      {/* NY: Dashboard-knapp */}
       <View style={styles.headerActions}>
         <TouchableOpacity 
-          style={styles.dashboardButton}
+          style={[styles.dashboardButton, { backgroundColor: '#2196F3' }]}
           onPress={() => navigation.navigate('Dashboard')}
         >
           <Text style={styles.dashboardButtonText}>📊 Dashboard</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Søkeboks */}
-      {renderSearchBox()}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={[
+            styles.searchInput, 
+            { 
+              backgroundColor: theme.cardBackground,
+              borderColor: theme.border,
+              color: theme.textPrimary 
+            }
+          ]}
+          placeholder="🔍 Søk etter oppgaver..."
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholderTextColor={theme.textTertiary}
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity 
+            style={[styles.clearSearchButton, { backgroundColor: theme.textTertiary }]}
+            onPress={() => setSearchText('')}
+          >
+            <Text style={styles.clearSearchText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-      {/* Filter-knapper */}
-      {renderFilterButtons()}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterButton, 
+            { 
+              backgroundColor: filter === 'all' ? theme.info : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setFilter('all')}
+        >
+          <Text style={[
+            styles.filterButtonText, 
+            { color: filter === 'all' ? '#fff' : theme.textSecondary }
+          ]}>
+            Alle ({tasks.length})
+          </Text>
+        </TouchableOpacity>
 
-      {/* NY: Kategori-filter knapper */}
-      {renderCategoryFilterButtons()}
+        <TouchableOpacity
+          style={[
+            styles.filterButton, 
+            { 
+              backgroundColor: filter === 'active' ? theme.info : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setFilter('active')}
+        >
+          <Text style={[
+            styles.filterButtonText, 
+            { color: filter === 'active' ? '#fff' : theme.textSecondary }
+          ]}>
+            Aktive ({tasks.filter(t => t.status === 'open').length})
+          </Text>
+        </TouchableOpacity>
 
-      {/* Sortering-knapper */}
-      {renderSortButtons()}
+        <TouchableOpacity
+          style={[
+            styles.filterButton, 
+            { 
+              backgroundColor: filter === 'completed' ? theme.info : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setFilter('completed')}
+        >
+          <Text style={[
+            styles.filterButtonText, 
+            { color: filter === 'completed' ? '#fff' : theme.textSecondary }
+          ]}>
+            Fullført ({tasks.filter(t => t.status === 'completed').length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.categoryFilterContainer}>
+        <Text style={[styles.categoryFilterLabel, { color: theme.textPrimary }]}>Kategori:</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilterScroll}
+          contentContainerStyle={styles.categoryFilterContent}
+        >
+          <TouchableOpacity
+            style={[
+              styles.categoryFilterButton,
+              { 
+                backgroundColor: categoryFilter === 'all' ? theme.info : theme.cardBackground,
+                borderColor: theme.info,
+                borderWidth: categoryFilter === 'all' ? 0 : 1 
+              }
+            ]}
+            onPress={() => setCategoryFilter('all')}
+          >
+            <Text style={[
+              styles.categoryFilterText,
+              { color: categoryFilter === 'all' ? '#fff' : theme.textSecondary }
+            ]}>
+              📋 Alle ({tasks.length})
+            </Text>
+          </TouchableOpacity>
+
+          {categoryOptions.map((category) => (
+            <TouchableOpacity
+              key={category.value}
+              style={[
+                styles.categoryFilterButton,
+                { 
+                  backgroundColor: categoryFilter === category.value ? category.color : theme.cardBackground,
+                  borderColor: category.color,
+                  borderWidth: categoryFilter === category.value ? 0 : 1
+                }
+              ]}
+              onPress={() => setCategoryFilter(category.value)}
+            >
+              <Text style={[
+                styles.categoryFilterText,
+                { color: categoryFilter === category.value ? '#fff' : theme.textSecondary }
+              ]}>
+                {category.label} ({tasks.filter(t => (t.category || 'Personlig') === category.value).length})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.sortContainer}>
+        <Text style={[styles.sortLabel, { color: theme.textPrimary }]}>Sorter:</Text>
+        
+        <TouchableOpacity
+          style={[
+            styles.sortButton, 
+            { 
+              backgroundColor: sortBy === 'date' ? theme.success : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setSortBy('date')}
+        >
+          <Text style={[
+            styles.sortButtonText, 
+            { color: sortBy === 'date' ? '#fff' : theme.textSecondary }
+          ]}>
+            📅 Dato
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.sortButton, 
+            { 
+              backgroundColor: sortBy === 'priority' ? theme.success : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setSortBy('priority')}
+        >
+          <Text style={[
+            styles.sortButtonText, 
+            { color: sortBy === 'priority' ? '#fff' : theme.textSecondary }
+          ]}>
+            ⚡ Prioritet
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.sortButton, 
+            { 
+              backgroundColor: sortBy === 'none' ? theme.success : theme.cardBackground,
+              borderColor: theme.border 
+            }
+          ]}
+          onPress={() => setSortBy('none')}
+        >
+          <Text style={[
+            styles.sortButtonText, 
+            { color: sortBy === 'none' ? '#fff' : theme.textSecondary }
+          ]}>
+            📝 Standard
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Laster oppgaver...</Text>
+          <ActivityIndicator size="large" color={theme.info} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            Laster oppgaver...
+          </Text>
         </View>
       ) : getFilteredSearchedAndSortedTasks().length === 0 ? (
-        <Text style={styles.emptyText}>
+        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
           {searchText.trim() 
             ? `Ingen oppgaver funnet for "${searchText}"` 
             : categoryFilter !== 'all' 
@@ -601,17 +584,16 @@ export default function TaskListScreen({ navigation }: TaskListScreenProps) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#007AFF']} // Android
-              tintColor="#007AFF" // iOS
+              colors={[theme.info]}
+              tintColor={theme.info}
             />
           }
-          // Skjul swipe når scroll
           onScrollBeginDrag={() => setSwipedItemId(null)}
         />
       )}
 
       <TouchableOpacity 
-        style={styles.createButton}
+        style={[styles.createButton, { backgroundColor: theme.info }]}
         onPress={() => navigation.navigate('CreateTask')}
       >
         <Text style={styles.createButtonText}>+ Opprett ny oppgave</Text>
@@ -624,18 +606,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
+    flex: 1,
   },
   loadingText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#666',
     marginTop: 10,
   },
   loadingContainer: {
@@ -647,13 +632,11 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#666',
     marginTop: 50,
   },
   taskList: {
     flex: 1,
   },
-  // NY: Swipe-to-delete styling
   taskItemContainer: {
     marginBottom: 10,
     position: 'relative',
@@ -663,7 +646,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#ff4444',
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
@@ -682,7 +664,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   taskCard: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 15,
     flexDirection: 'column',
@@ -690,11 +671,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   taskCardSwiped: {
-    marginRight: 80, // Make room for delete button
-  },
-  taskSwipeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginRight: 80,
   },
   taskContent: {
     flex: 1,
@@ -710,20 +687,14 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   swipeIndicatorText: {
     fontSize: 16,
-    color: '#999',
     fontWeight: 'bold',
   },
-  swipeIndicatorActive: {
-    color: '#ff4444',
-  },
   editButton: {
-    backgroundColor: '#2196F3',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -745,7 +716,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   swipeDeleteButton: {
-    backgroundColor: '#ff4444',
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -760,16 +730,13 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 5,
   },
   taskDetail: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 2,
   },
   createButton: {
-    backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -780,7 +747,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Filter-knapper styling
   filterContainer: {
     flexDirection: 'row',
     marginBottom: 15,
@@ -792,23 +758,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
     alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   filterButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
   },
-  filterButtonTextActive: {
-    color: '#fff',
-  },
-  // Sortering-knapper styling
   sortContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -818,7 +773,6 @@ const styles = StyleSheet.create({
   sortLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
     marginRight: 8,
   },
   sortButton: {
@@ -826,35 +780,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f8f8f8',
-  },
-  sortButtonActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
   },
   sortButtonText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#666',
   },
-  sortButtonTextActive: {
-    color: '#fff',
-  },
-  // Søkeboks styling
   searchContainer: {
     position: 'relative',
     marginBottom: 15,
   },
   searchInput: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 15,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
     elevation: 2,
-    paddingRight: 45, // Plass for clear-knapp
+    paddingRight: 45,
   },
   clearSearchButton: {
     position: 'absolute',
@@ -864,7 +805,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -873,7 +813,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Deadline-varsler styling
   deadlineBadge: {
     marginLeft: 10,
     paddingHorizontal: 8,
@@ -887,7 +826,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  // NY: Kategori-styling
   categoryContainer: {
     marginBottom: 8,
   },
@@ -903,14 +841,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  // NY: Kategori-filter styling
   categoryFilterContainer: {
     marginBottom: 15,
   },
   categoryFilterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   categoryFilterScroll: {
@@ -926,23 +862,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
     elevation: 2,
   },
-  categoryFilterButtonActive: {
-    elevation: 4,
-  },
   categoryFilterText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
   },
-  categoryFilterTextActive: {
-    color: '#fff',
-  },
-  // NY: Dashboard-knapp styles
   headerActions: {
     marginBottom: 20,
   },
   dashboardButton: {
-    backgroundColor: '#2196F3',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
