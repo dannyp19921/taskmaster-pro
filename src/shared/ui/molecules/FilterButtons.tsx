@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/FilterButtons.tsx - Refaktorert med atomiske komponenter
+// /src/shared/ui/molecules/FilterButtons.tsx - Perfect atomic design! 🎨
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from '../atoms/Button';
@@ -52,7 +52,13 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
             style={styles.filterButton}
             testID={`filter-${key}`}
           >
-            {icon} {label} ({count})
+            <Text 
+              variant="button" 
+              color={activeFilter === key ? '#FFFFFF' : 'primary'}
+              style={styles.buttonText}
+            >
+              {icon} {label} ({count})
+            </Text>
           </Button>
         ))}
       </View>
@@ -73,6 +79,9 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     flex: 1,
+  },
+  buttonText: {
+    textAlign: 'center',
   },
 });
 

@@ -1,7 +1,8 @@
-// /src/shared/ui/molecules/SearchBox.tsx - Refaktorert med atomiske komponenter
+// /src/shared/ui/molecules/SearchBox.tsx - Perfect atomic design! 🎨
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Input } from '../atoms/Input';
+import { Text } from '../atoms/Text';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface SearchBoxProps {
@@ -40,13 +41,17 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         disabled={disabled}
         testID={testID}
       />
+      
+      {/* Clear button - appears when user has typed something */}
       {value.length > 0 && (
         <TouchableOpacity 
-          style={styles.clearButton} 
+          style={[styles.clearButton, { backgroundColor: theme.border }]} 
           onPress={handleClear}
           testID={`${testID}-clear`}
         >
-          <Text style={[styles.clearText, { color: theme.textSecondary }]}>✕</Text>
+          <Text variant="caption" color="secondary" style={styles.clearText}>
+            ✕
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -73,12 +78,11 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.1)',
     borderRadius: 10,
   },
   clearText: {
-    fontSize: 12,
     fontWeight: '600',
+    lineHeight: 16,
   },
 });
 

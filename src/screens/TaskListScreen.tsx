@@ -119,13 +119,17 @@ export default function TaskListScreen({ navigation }: any) {
         <ThemeToggle />
       </View>
 
-      {/* 📊 Dashboard Navigation */}
-      <TouchableOpacity 
-        style={[styles.dashboardButton, { backgroundColor: theme.info }]}
+      {/* 📊 Dashboard Navigation - Using Button atom! */}
+      <Button
+        variant="info"
+        size="medium"
+        fullWidth
+        icon="📊"
         onPress={() => navigation.navigate('Dashboard')}
+        style={styles.dashboardButton}
       >
-        <Text variant="button" color="#FFFFFF">📊 Dashboard</Text>
-      </TouchableOpacity>
+        Dashboard
+      </Button>
 
       {/* 🔍 Search */}
       <SearchBox 
@@ -276,13 +280,17 @@ export default function TaskListScreen({ navigation }: any) {
         </>
       )}
 
-      {/* ➕ Create Button */}
-      <TouchableOpacity 
-        style={[styles.createButton, { backgroundColor: theme.info }]}
+      {/* ➕ Create Button - Using Button atom! */}
+      <Button
+        variant="primary"
+        size="large"
+        fullWidth
+        icon="+"
         onPress={() => navigation.navigate('CreateTask')}
+        style={styles.createButton}
       >
-        <Text variant="button" color="#FFFFFF">+ Opprett ny oppgave</Text>
-      </TouchableOpacity>
+        Opprett ny oppgave
+      </Button>
     </View>
   );
 }
@@ -299,10 +307,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dashboardButton: { 
-    padding: 12, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    elevation: 3, 
     marginBottom: 20,
   },
   categorySection: { 
@@ -358,9 +362,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   createButton: { 
-    padding: 15, 
-    borderRadius: 8, 
-    alignItems: 'center', 
     marginTop: 16,
     elevation: 8,
     shadowColor: '#000',
