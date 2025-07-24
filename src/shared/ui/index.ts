@@ -11,8 +11,9 @@ export { default as FilterButtons } from './molecules/FilterButtons';
 export { default as ThemeToggle } from './molecules/ThemeToggle';
 
 // 🔶 Organisms (når de blir laget)
-// export { Header } from './organisms/Header';
-// export { EmptyState } from './organisms/EmptyState';
+export { TaskFilterPanel } from './organisms/TaskFilterPanel';
+export { EmptyState } from './organisms/EmptyState';
+export { Header } from './organisms/Header';
 
 // 📱 Types
 export type { ButtonVariant, ButtonSize } from './atoms/Button';

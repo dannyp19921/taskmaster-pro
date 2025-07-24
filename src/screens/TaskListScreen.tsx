@@ -1,28 +1,28 @@
-// /src/screens/TaskListScreen.tsx - Fixed styles version
+// /src/screens/TaskListScreen.tsx - Using organisms! SO MUCH CLEANER! 🚀
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
-// 🎯 Modern imports - Clean!
+// 🎯 Modern imports - SUPER Clean!
 import { useTasks, useTaskFilters } from '../features/tasks';
 import TaskCard from '../features/tasks/components/TaskCard';
 
-// 🔄 UI components - gradually using atoms
-import { Button, Text } from '../shared/ui';
-import SearchBox from '../shared/ui/molecules/SearchBox';
-import FilterButtons from '../shared/ui/molecules/FilterButtons';
-import ThemeToggle from '../shared/ui/molecules/ThemeToggle';
+// 🎨 UI organisms - Big reusable blocks!
+import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
+import { EmptyState } from '../shared/ui/organisms/EmptyState';
+import { Header } from '../shared/ui/organisms/Header';
+import { Button } from '../shared/ui';
 
 // 🌐 Context & Utils
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORY_OPTIONS, getCategoryInfo } from '../shared/utils/categories';
+import { getCategoryInfo } from '../shared/utils/categories';
 
 export default function TaskListScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  // 🎯 POWER OF HOOKS! Business logic i 2 linjer!
+  // 🎯 POWER OF HOOKS! Business logic in 2 lines!
   const {
     tasks,
     loading,
@@ -51,7 +51,7 @@ export default function TaskListScreen({ navigation }: any) {
     setSelectedTaskId(null);
   }, []));
 
-  // 🎯 Event handlers
+  // 🎯 Event handlers - Super clean!
   const handleTaskPress = (taskId: string) => {
     setSelectedTaskId(selectedTaskId === taskId ? null : taskId);
   };
@@ -77,49 +77,79 @@ export default function TaskListScreen({ navigation }: any) {
     refresh();
   };
 
-  // 🎨 Category Button - FIXED styling
-  const CategoryButton = ({ category, isActive, onPress, count }: {
-    category: { value: string; label: string; color: string };
-    isActive: boolean;
-    onPress: () => void;
-    count: number;
-  }) => (
-    <Button
-      variant={isActive ? 'primary' : 'secondary'}
-      size="small"
-      onPress={onPress}
-      style={{
-        marginRight: 8,
-        borderColor: category.color,
-        backgroundColor: isActive ? category.color : 'transparent'
-      }}
-    >
-      {category.label} ({count})
-    </Button>
-  );
+  // 📊 Get category counts for filter panel
+  const getCategoryCounts = () => {
+    const counts: Record<string, number> = {
+      all: tasks.length,
+    };
+    
+    tasks.forEach(task => {
+      const category = task.category || 'Personlig';
+      counts[category] = (counts[category] || 0) + 1;
+    });
+    
+    return counts;
+  };
 
-  // 📊 Empty state message
-  const getEmptyMessage = () => {
+  // 📊 Get empty state message and props
+  const getEmptyStateProps = () => {
     if (searchText.trim()) {
-      return `Ingen oppgaver funnet for "${searchText}"`;
+      return {
+        variant: 'search' as const,
+        title: 'Ingen resultater',
+        description: `Fant ingen oppgaver som matcher "${searchText}"`,
+        actionLabel: 'Tøm søkefeltet',
+        onAction: () => setSearchText(''),
+      };
     }
+    
     if (categoryFilter !== 'all') {
-      return `Ingen oppgaver i kategorien "${getCategoryInfo(categoryFilter).label}"`;
+      const categoryInfo = getCategoryInfo(categoryFilter);
+      return {
+        variant: 'filter' as const,
+        title: 'Ingen oppgaver i denne kategorien',
+        description: `Du har ingen oppgaver i kategorien "${categoryInfo.label}"`,
+        actionLabel: 'Vis alle kategorier',
+        onAction: () => setCategoryFilter('all'),
+      };
     }
-    if (filter === 'active') return 'Ingen aktive oppgaver';
-    if (filter === 'completed') return 'Ingen fullførte oppgaver';
-    return 'Ingen oppgaver ennå';
+    
+    if (filter === 'active') {
+      return {
+        title: 'Alle oppgaver fullført! 🎉',
+        description: 'Du har ingen aktive oppgaver akkurat nå.',
+        actionLabel: 'Opprett ny oppgave',
+        onAction: () => navigation.navigate('CreateTask'),
+      };
+    }
+    
+    if (filter === 'completed') {
+      return {
+        title: 'Ingen fullførte oppgaver ennå',
+        description: 'Fullfør noen oppgaver for å se dem her.',
+        actionLabel: 'Vis aktive oppgaver',
+        onAction: () => setFilter('active'),
+      };
+    }
+    
+    // No tasks at all
+    return {
+      title: 'Velkommen til TaskMaster Pro!',
+      description: 'Du har ingen oppgaver ennå. Opprett din første oppgave for å komme i gang.',
+      actionLabel: '➕ Opprett din første oppgave',
+      onAction: () => navigation.navigate('CreateTask'),
+    };
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header */}
-      <View style={styles.header}>
-        <Text variant="h3" color="primary">Mine oppgaver</Text>
-        <ThemeToggle />
-      </View>
+      {/* 📱 Header - Clean organism! */}
+      <Header 
+        title="Mine oppgaver"
+        subtitle={`${tasks.length} oppgaver totalt`}
+      />
 
-      {/* 📊 Dashboard Navigation - Using Button atom! */}
+      {/* 📊 Dashboard Navigation */}
       <Button
         variant="info"
         size="medium"
@@ -131,156 +161,59 @@ export default function TaskListScreen({ navigation }: any) {
         Dashboard
       </Button>
 
-      {/* 🔍 Search */}
-      <SearchBox 
-        value={searchText}
-        onChangeText={setSearchText}
-        placeholder="🔍 Søk etter oppgaver..."
-        onClear={() => setSearchText('')}
-      />
-
-      {/* 🎛️ Status Filters */}
-      <FilterButtons
+      {/* 🎛️ Complete Filter Panel - One organism! */}
+      <TaskFilterPanel
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        onSearchClear={() => setSearchText('')}
         activeFilter={filter}
         onFilterChange={setFilter}
-        counts={taskCounts}
+        filterCounts={taskCounts}
+        categoryFilter={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+        categoryCounts={getCategoryCounts()}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        hasActiveFilters={filterStats.hasActiveFilters}
+        onClearAll={clearFilters}
       />
-
-      {/* 🏷️ Category Filters */}
-      <View style={styles.categorySection}>
-        <View style={styles.sectionHeader}>
-          <Text variant="subtitle2" color="primary">Kategori:</Text>
-          {filterStats.hasActiveFilters && (
-            <Button
-              variant="secondary"
-              size="small"
-              onPress={clearFilters}
-              style={styles.clearButton}
-            >
-              ✕ Nullstill
-            </Button>
-          )}
-        </View>
-        
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <CategoryButton
-            category={{ 
-              value: 'all', 
-              label: '📋 Alle', 
-              color: theme.info 
-            }}
-            isActive={categoryFilter === 'all'}
-            onPress={() => setCategoryFilter('all')}
-            count={tasks.length}
-          />
-          {CATEGORY_OPTIONS.map((category) => (
-            <CategoryButton
-              key={category.value}
-              category={category}
-              isActive={categoryFilter === category.value}
-              onPress={() => setCategoryFilter(category.value)}
-              count={tasks.filter(t => (t.category || 'Personlig') === category.value).length}
-            />
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* 🔀 Sort Options */}
-      <View style={styles.sortSection}>
-        <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
-          Sorter:
-        </Text>
-        <View style={styles.sortButtons}>
-          <Button 
-            variant={sortBy === 'date' ? 'success' : 'secondary'}
-            size="small"
-            onPress={() => setSortBy('date')}
-          >
-            📅 Dato
-          </Button>
-          <Button 
-            variant={sortBy === 'priority' ? 'success' : 'secondary'}
-            size="small"
-            onPress={() => setSortBy('priority')}
-          >
-            ⚡ Prioritet
-          </Button>
-          <Button 
-            variant={sortBy === 'none' ? 'success' : 'secondary'}
-            size="small"
-            onPress={() => setSortBy('none')}
-          >
-            📝 Standard
-          </Button>
-        </View>
-      </View>
 
       {/* 📋 Content */}
       {loading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.info} />
-          <Text variant="body2" color="secondary" style={styles.loadingText}>
-            Laster oppgaver...
-          </Text>
         </View>
       ) : filteredTasks.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <Text variant="h1" style={styles.emptyIcon}>
-            📝
-          </Text>
-          <Text variant="body1" color="secondary" align="center">
-            {getEmptyMessage()}
-          </Text>
-          {tasks.length === 0 && (
-            <Button
-              variant="primary"
-              size="medium"
-              onPress={() => navigation.navigate('CreateTask')}
-              style={styles.emptyActionButton}
-            >
-              ➕ Opprett din første oppgave
-            </Button>
-          )}
-        </View>
+        <EmptyState {...getEmptyStateProps()} />
       ) : (
-        <>
-          {filterStats.hasActiveFilters && (
-            <View style={styles.statsContainer}>
-              <Text variant="caption" color="secondary">
-                Viser {filteredTasks.length} av {tasks.length} oppgaver
-              </Text>
-            </View>
+        <FlatList
+          data={filteredTasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TaskCard
+              task={item}
+              isSelected={selectedTaskId === item.id}
+              onPress={() => handleTaskPress(item.id)}
+              onEdit={() => handleTaskEdit(item.id)}
+              onDelete={() => handleTaskDelete(item.id, item.title)}
+            />
           )}
-          
-          <FlatList
-            data={filteredTasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TaskCard
-                task={item}
-                isSelected={selectedTaskId === item.id}
-                onPress={() => handleTaskPress(item.id)}
-                onEdit={() => handleTaskEdit(item.id)}
-                onDelete={() => handleTaskDelete(item.id, item.title)}
-              />
-            )}
-            style={styles.list}
-            refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
-                onRefresh={handleRefresh} 
-                colors={[theme.info]} 
-                tintColor={theme.info} 
-              />
-            }
-            onScrollBeginDrag={() => setSelectedTaskId(null)}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-            showsVerticalScrollIndicator={false}
-          />
-        </>
+          style={styles.list}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={handleRefresh} 
+              colors={[theme.info]} 
+              tintColor={theme.info} 
+            />
+          }
+          onScrollBeginDrag={() => setSelectedTaskId(null)}
+          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          showsVerticalScrollIndicator={false}
+        />
       )}
 
-      {/* ➕ Create Button - Using Button atom! */}
+      {/* ➕ Create Button */}
       <Button
         variant="primary"
         size="large"
@@ -295,71 +228,22 @@ export default function TaskListScreen({ navigation }: any) {
   );
 }
 
+// 🎨 MUCH CLEANER STYLES! 
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     padding: 20,
   },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 20,
-  },
   dashboardButton: { 
     marginBottom: 20,
-  },
-  categorySection: { 
-    marginBottom: 15,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  clearButton: {
-    paddingHorizontal: 12,
-  },
-  sectionTitle: { 
-    marginBottom: 8,
-  },
-  sortSection: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 15,
-  },
-  sortButtons: { 
-    flexDirection: 'row', 
-    gap: 8, 
-    marginLeft: 8,
   },
   centerContainer: { 
     flex: 1, 
     justifyContent: 'center', 
-    alignItems: 'center', 
-    paddingTop: 50,
-  },
-  loadingText: { 
-    marginTop: 10,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-    opacity: 0.5,
-  },
-  emptyActionButton: {
-    marginTop: 24,
-    minWidth: 200,
-  },
-  statsContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-    marginBottom: 8,
+    alignItems: 'center',
   },
   list: { 
     flex: 1,
-    marginTop: 8,
   },
   createButton: { 
     marginTop: 16,
