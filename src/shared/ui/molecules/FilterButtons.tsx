@@ -1,79 +1,79 @@
-// /src/components/FilterButtons.tsx - Modulære filter-knapper
-
+// /src/shared/ui/molecules/FilterButtons.tsx - Refaktorert med atomiske komponenter
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { View, StyleSheet } from 'react-native';
+import { Button } from '../atoms/Button';
+import { Text } from '../atoms/Text';
+
+export type FilterType = 'all' | 'active' | 'completed';
+
+interface FilterCounts {
+  all: number;
+  active: number;
+  completed: number;
+}
 
 interface FilterButtonsProps {
-  activeFilter: 'all' | 'active' | 'completed';
-  onFilterChange: (filter: 'all' | 'active' | 'completed') => void;
-  counts: {
-    all: number;
-    active: number;
-    completed: number;
-  };
+  activeFilter: FilterType;
+  onFilterChange: (filter: FilterType) => void;
+  counts: FilterCounts;
+  testID?: string;
 }
 
-export default function FilterButtons({ activeFilter, onFilterChange, counts }: FilterButtonsProps) {
-  const { theme } = useTheme();
-
-  const FilterButton = ({ 
-    filter, 
-    label, 
-    count 
-  }: { 
-    filter: 'all' | 'active' | 'completed'; 
-    label: string; 
-    count: number; 
-  }) => {
-    const isActive = activeFilter === filter;
-    
-    return (
-      <TouchableOpacity
-        style={[
-          styles.button, 
-          { 
-            backgroundColor: isActive ? theme.info : theme.cardBackground,
-            borderColor: theme.border 
-          }
-        ]}
-        onPress={() => onFilterChange(filter)}
-      >
-        <Text style={[
-          styles.text, 
-          { color: isActive ? '#fff' : theme.textSecondary }
-        ]}>
-          {label} ({count})
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+const FilterButtons: React.FC<FilterButtonsProps> = ({
+  activeFilter,
+  onFilterChange,
+  counts,
+  testID = "filter-buttons",
+}) => {
+  const filterOptions: Array<{
+    key: FilterType;
+    label: string;
+    icon: string;
+    count: number;
+  }> = [
+    { key: 'all', label: 'Alle', icon: '📋', count: counts.all },
+    { key: 'active', label: 'Aktive', icon: '⏳', count: counts.active },
+    { key: 'completed', label: 'Fullført', icon: '✅', count: counts.completed },
+  ];
 
   return (
-    <View style={styles.container}>
-      <FilterButton filter="all" label="Alle" count={counts.all} />
-      <FilterButton filter="active" label="Aktive" count={counts.active} />
-      <FilterButton filter="completed" label="Fullført" count={counts.completed} />
+    <View style={styles.container} testID={testID}>
+      <Text variant="subtitle2" color="secondary" style={styles.title}>
+        Status:
+      </Text>
+      
+      <View style={styles.buttonContainer}>
+        {filterOptions.map(({ key, label, icon, count }) => (
+          <Button
+            key={key}
+            variant={activeFilter === key ? 'primary' : 'secondary'}
+            size="small"
+            onPress={() => onFilterChange(key)}
+            style={styles.filterButton}
+            testID={`filter-${key}`}
+          >
+            {icon} {label} ({count})
+          </Button>
+        ))}
+      </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     marginBottom: 15,
+  },
+  title: {
+    marginBottom: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
     gap: 8,
   },
-  button: {
+  filterButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
+
+export default FilterButtons;
