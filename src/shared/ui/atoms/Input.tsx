@@ -1,13 +1,14 @@
-// /src/shared/ui/atoms/Input.tsx - Simplified version
+// /src/shared/ui/atoms/Input.tsx - Complete with error and textarea support
 import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 
-export type InputVariant = 'default' | 'search';
+export type InputVariant = 'default' | 'search' | 'textarea';
 export type InputSize = 'small' | 'medium' | 'large';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
+  error?: string;
   hint?: string;
   variant?: InputVariant;
   size?: InputSize;
@@ -19,6 +20,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
 
 export const Input: React.FC<InputProps> = ({
   label,
+  error,
   hint,
   variant = 'default',
   size = 'medium',
@@ -51,6 +53,11 @@ export const Input: React.FC<InputProps> = ({
           borderRadius: 25,
           backgroundColor: theme.cardBackground,
         };
+      case 'textarea':
+        return {
+          minHeight: 100,
+          textAlignVertical: 'top' as const,
+        };
       default:
         return {};
     }
@@ -60,6 +67,7 @@ export const Input: React.FC<InputProps> = ({
   const variantStyles = getVariantStyles();
 
   const getBorderColor = () => {
+    if (error) return '#F44336'; // Red for errors
     if (isFocused) return theme.info;
     return theme.border;
   };
@@ -102,6 +110,7 @@ export const Input: React.FC<InputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           editable={!disabled}
+          multiline={variant === 'textarea'}
           testID={testID}
           {...textInputProps}
         />
@@ -113,7 +122,13 @@ export const Input: React.FC<InputProps> = ({
         )}
       </View>
 
-      {hint && (
+      {error && (
+        <Text style={[styles.errorText, { color: '#F44336' }]}>
+          {error}
+        </Text>
+      )}
+
+      {hint && !error && (
         <Text style={[styles.hintText, { color: theme.textSecondary }]}>
           {hint}
         </Text>
@@ -144,6 +159,11 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 16,
     marginHorizontal: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
   },
   hintText: {
     fontSize: 12,
