@@ -1,9 +1,8 @@
-// /src/shared/ui/molecules/DatePicker.tsx - Modern date picker! 📅
+// /src/shared/ui/molecules/DatePicker.tsx - Modern date picker med custom calendar! 📅
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Input } from '../atoms/Input';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from '../atoms/Text';
+import { Calendar } from './Calendar';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface DatePickerProps {
@@ -12,6 +11,7 @@ interface DatePickerProps {
   onDateChange: (date: string) => void;
   error?: string;
   hint?: string;
+  placeholder?: string;
   minimumDate?: Date;
   maximumDate?: Date;
   disabled?: boolean;
@@ -24,32 +24,30 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   onDateChange,
   error,
   hint,
+  placeholder = "Velg dato...",
   minimumDate,
   maximumDate,
   disabled = false,
   testID = "date-picker",
 }) => {
   const { theme } = useTheme();
-  const [showPicker, setShowPicker] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  // Convert ISO string to Date object
+  // Convert ISO string (YYYY-MM-DD) to Date object
   const getDateFromValue = (): Date => {
     if (value) {
-      const date = new Date(value);
+      const date = new Date(value + 'T12:00:00'); // Add time to avoid timezone issues
       return isNaN(date.getTime()) ? new Date() : date;
     }
     return new Date();
   };
 
-  // Format date for display
-  const formatDisplayDate = (date: Date): string => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-    return date.toLocaleDateString('nb-NO', options);
+  // Format date for display (Norwegian format)
+  const formatDisplayDate = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    const [year, month, day] = dateString.split('-');
+    return `${day}.${month}.${year}`;
   };
 
   // Format date for ISO string (YYYY-MM-DD)
@@ -60,25 +58,19 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return `${year}-${month}-${day}`;
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowPicker(false);
-    }
-
-    if (selectedDate) {
-      const isoString = formatISODate(selectedDate);
-      onDateChange(isoString);
-    }
+  const handleDateSelect = (date: Date) => {
+    const isoString = formatISODate(date);
+    onDateChange(isoString);
+    setShowCalendar(false);
   };
 
-  const openPicker = () => {
+  const openCalendar = () => {
     if (!disabled) {
-      setShowPicker(true);
+      setShowCalendar(true);
     }
   };
 
-  const currentDate = getDateFromValue();
-  const displayText = value ? formatDisplayDate(currentDate) : '';
+  const displayText = value ? formatDisplayDate(value) : '';
 
   return (
     <View style={styles.container} testID={testID}>
@@ -89,13 +81,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       )}
 
       <TouchableOpacity
-        onPress={openPicker}
+        onPress={openCalendar}
         disabled={disabled}
         style={[
           styles.dateButton,
           {
             backgroundColor: disabled ? theme.background : theme.cardBackground,
             borderColor: error ? '#F44336' : theme.border,
+            opacity: disabled ? 0.6 : 1,
           }
         ]}
         testID={`${testID}-button`}
@@ -109,7 +102,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           color={value ? 'primary' : 'secondary'}
           style={styles.dateText}
         >
-          {displayText || 'Velg dato...'}
+          {displayText || placeholder}
         </Text>
         
         <Text variant="body1" color="secondary" style={styles.chevron}>
@@ -120,11 +113,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {error && (
         <Text 
           variant="caption" 
-          style={{
-            marginTop: 4,
-            fontWeight: '500',
-            color: '#F44336'
-          }}
+          style={{ ...styles.errorText, color: '#F44336' }}
         >
           {error}
         </Text>
@@ -134,24 +123,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <Text 
           variant="caption" 
           color="secondary" 
-          style={{ marginTop: 4 }}
+          style={styles.hintText}
         >
           {hint}
         </Text>
       )}
 
-      {/* Date Picker Modal */}
-      {showPicker && (
-        <DateTimePicker
-          value={currentDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
-          minimumDate={minimumDate}
-          maximumDate={maximumDate}
-          testID={`${testID}-modal`}
-        />
-      )}
+      {/* Calendar Modal */}
+      <Calendar
+        visible={showCalendar}
+        selectedDate={getDateFromValue()}
+        onDateSelect={handleDateSelect}
+        onClose={() => setShowCalendar(false)}
+        minimumDate={minimumDate}
+        maximumDate={maximumDate}
+        testID={`${testID}-calendar`}
+      />
     </View>
   );
 };
@@ -171,14 +158,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     minHeight: 48,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   dateButtonIcon: {
     marginRight: 12,
+    fontSize: 18,
   },
   dateText: {
     flex: 1,
+    fontSize: 16,
   },
   chevron: {
     fontSize: 10,
+    opacity: 0.6,
+  },
+  errorText: {
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  hintText: {
+    marginTop: 4,
   },
 });

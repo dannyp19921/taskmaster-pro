@@ -1,7 +1,7 @@
-// /src/screens/CreateTaskScreen.tsx - 100% moderne arkitektur med konsistent kalender! 🚀
+// /src/screens/CreateTaskScreen.tsx - Clean architecture med DatePicker molekyl! 🚀
 
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 
 // 🎯 Modern imports - SUPER Clean!
 import { useCreateTask } from '../features/tasks/hooks/useCreateTask';
@@ -9,6 +9,7 @@ import { CreateTaskDto } from '../features/tasks/types/task.types';
 
 // 🎨 UI components - Perfect atomic design!
 import { Button, Input, Text } from '../shared/ui';
+import { DatePicker } from '../shared/ui/molecules/DatePicker';
 import { Header } from '../shared/ui/organisms/Header';
 
 // 🌐 Context & Utils
@@ -31,8 +32,6 @@ export default function CreateTaskScreen({ navigation }: any) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // 🎯 Form handlers - super clean!
   const updateField = (field: keyof typeof formData) => (value: string) => {
@@ -98,20 +97,6 @@ export default function CreateTaskScreen({ navigation }: any) {
     }
   };
 
-  // 📅 Date formatting functions (same as TaskDetailScreen)
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const formatDateDisplay = (dateString: string) => {
-    if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
-    return `${day}.${month}.${year}`;
-  };
-
   // 🎨 Priority Button - reusable component
   const PriorityButton = ({ priority, label, color }: {
     priority: 'Low' | 'Medium' | 'High';
@@ -149,140 +134,6 @@ export default function CreateTaskScreen({ navigation }: any) {
       {category.label}
     </Button>
   );
-
-  // 📅 Calendar component (same as TaskDetailScreen)
-  const renderCalendar = () => {
-    const today = new Date();
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-    
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startDayOfWeek = firstDay.getDay();
-    
-    const monthNames = [
-      'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-      'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    
-    const weekDays = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
-    
-    const days = [];
-    
-    // Empty cells before month start
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(<View key={`empty-${i}`} style={styles.emptyDay} />);
-    }
-    
-    // Days in month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const isToday = date.toDateString() === today.toDateString();
-      const isSelected = date.toDateString() === selectedDate.toDateString();
-      const isPast = date < today && !isToday;
-      
-      days.push(
-        <TouchableOpacity
-          key={day}
-          style={[
-            styles.dayButton,
-            isToday && styles.todayButton,
-            isSelected && styles.selectedDayButton,
-            isPast && styles.pastDayButton
-          ]}
-          onPress={() => {
-            if (!isPast) {
-              setSelectedDate(date);
-              updateField('due_date')(formatDate(date));
-              setShowCalendar(false);
-            }
-          }}
-          disabled={isPast}
-        >
-          <Text style={{
-            fontSize: 16,
-            color: isPast ? '#ccc' : (isToday || isSelected) ? '#fff' : '#333',
-            fontWeight: (isToday || isSelected) ? 'bold' : 'normal'
-          }}>
-            {day}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-    
-    return (
-      <Modal visible={showCalendar} transparent animationType="fade">
-        <View style={styles.calendarOverlay}>
-          <View style={styles.calendarContainer}>
-            <View style={styles.calendarHeader}>
-              <TouchableOpacity
-                onPress={() => {
-                  const prevMonth = new Date(selectedDate);
-                  prevMonth.setMonth(prevMonth.getMonth() - 1);
-                  setSelectedDate(prevMonth);
-                }}
-                style={styles.navButton}
-              >
-                <Text style={styles.navButtonText}>‹</Text>
-              </TouchableOpacity>
-              
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: theme.textPrimary
-              }}>
-                {monthNames[currentMonth]} {currentYear}
-              </Text>
-              
-              <TouchableOpacity
-                onPress={() => {
-                  const nextMonth = new Date(selectedDate);
-                  nextMonth.setMonth(nextMonth.getMonth() + 1);
-                  setSelectedDate(nextMonth);
-                }}
-                style={styles.navButton}
-              >
-                <Text style={styles.navButtonText}>›</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.weekDaysRow}>
-              {weekDays.map(day => (
-                <Text 
-                  key={day} 
-                  style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    fontSize: 12,
-                    fontWeight: '600',
-                    color: '#666',
-                    paddingVertical: 5,
-                  }}
-                >
-                  {day}
-                </Text>
-              ))}
-            </View>
-            
-            <View style={styles.calendarGrid}>
-              {days}
-            </View>
-            
-            <View style={styles.calendarButtons}>
-              <Button
-                variant="secondary"
-                size="medium"
-                onPress={() => setShowCalendar(false)}
-              >
-                Avbryt
-              </Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -324,47 +175,17 @@ export default function CreateTaskScreen({ navigation }: any) {
           testID="task-description-input"
         />
 
-        {/* 📅 Due Date Picker - Same calendar as TaskDetail! */}
-        <View style={styles.section}>
-          <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
-            Forfallsdato *
-          </Text>
-          
-          <TouchableOpacity
-            style={[styles.datePickerButton, { 
-              backgroundColor: theme.cardBackground,
-              borderColor: errors.due_date ? '#F44336' : theme.border
-            }]}
-            onPress={() => setShowCalendar(true)}
-          >
-            <Text style={{
-              fontSize: 16,
-              color: theme.textPrimary
-            }}>
-              {formData.due_date ? formatDateDisplay(formData.due_date) : 'Velg dato'}
-            </Text>
-            <Text style={styles.calendarIcon}>📅</Text>
-          </TouchableOpacity>
-          
-          {errors.due_date && (
-            <Text style={{
-              fontSize: 12,
-              marginTop: 4,
-              fontWeight: '500',
-              color: '#F44336'
-            }}>
-              {errors.due_date}
-            </Text>
-          )}
-          
-          <Text style={{
-            fontSize: 12,
-            marginTop: 4,
-            color: theme.textSecondary
-          }}>
-            Trykk for å åpne kalender
-          </Text>
-        </View>
+        {/* 📅 Due Date Picker - Using new DatePicker molecule! */}
+        <DatePicker
+          label="Forfallsdato *"
+          value={formData.due_date}
+          onDateChange={updateField('due_date')}
+          error={errors.due_date}
+          hint="Trykk for å åpne kalender"
+          placeholder="Velg forfallsdato..."
+          minimumDate={new Date()} // Can't select past dates
+          testID="task-due-date-picker"
+        />
 
         {/* ⚡ Priority Selection */}
         <View style={styles.section}>
@@ -431,9 +252,6 @@ export default function CreateTaskScreen({ navigation }: any) {
           {loading ? 'Oppretter...' : '✅ Opprett oppgave'}
         </Button>
       </View>
-
-      {/* 📅 Calendar Modal - Same as TaskDetail */}
-      {renderCalendar()}
     </View>
   );
 }
@@ -451,21 +269,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: 8,
-  },
-  datePickerButton: {
-    borderWidth: 1,
-    padding: 15,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    elevation: 2,
-  },
-  datePickerText: {
-    fontSize: 16,
-  },
-  calendarIcon: {
-    fontSize: 18,
   },
   priorityButtons: {
     flexDirection: 'row',
@@ -494,66 +297,5 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 2,
-  },
-  // Calendar styles (same as TaskDetailScreen)
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    margin: 20,
-    maxWidth: 350,
-    elevation: 10,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  navButton: {
-    padding: 10,
-  },
-  navButtonText: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  emptyDay: {
-    width: '14.28%',
-    height: 40,
-  },
-  dayButton: {
-    width: '14.28%',
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  todayButton: {
-    backgroundColor: '#007AFF',
-  },
-  selectedDayButton: {
-    backgroundColor: '#4CAF50',
-  },
-  pastDayButton: {
-    opacity: 0.3,
-  },
-  calendarButtons: {
-    marginTop: 20,
-    alignItems: 'center',
   },
 });

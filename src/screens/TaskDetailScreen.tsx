@@ -1,76 +1,62 @@
-// /src/screens/TaskDetailScreen.tsx - Med fikset kategori-dropdown
+// /src/screens/TaskDetailScreen.tsx - Clean architecture med DatePicker! 🚀
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+
+// 🎯 Services & Types
 import { supabase } from '../services/supabase';
+
+// 🎨 UI components - Atomic design!
+import { Button, Input, Text } from '../shared/ui';
+import { DatePicker } from '../shared/ui/molecules/DatePicker';
+import { Header } from '../shared/ui/organisms/Header';
+
+// 🌐 Context & Utils
+import { useTheme } from '../context/ThemeContext';
+import { CATEGORY_OPTIONS } from '../shared/utils/categories';
 
 interface Task {
   id: string;
   title: string;
+  description?: string;
   due_date: string;
   priority: string;
-  category: string; // Legg til kategori
+  category: string;
   status: string;
   user_id: string;
+  created_at?: string; // Optional since it might not always be present
 }
 
 export default function TaskDetailScreen({ navigation, route }: any) {
-  const [task, setTask] = useState<Task | null>(null);
-  const [title, setTitle] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [priority, setPriority] = useState('Medium');
-  const [category, setCategory] = useState('Personlig'); // Ny state for kategori
-  const [completed, setCompleted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false); // Ny state
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [saving, setSaving] = useState(false);
-
+  const { theme } = useTheme();
   const { taskId } = route.params;
 
-  // Formatter dato til YYYY-MM-DD (lokal tid, ikke UTC)
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // 🎯 State management
+  const [task, setTask] = useState<Task | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    due_date: '',
+    priority: 'Medium' as 'Low' | 'Medium' | 'High',
+    category: 'Personlig',
+    completed: false,
+  });
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Formatter dato til visning (norsk format)
-  const formatDateDisplay = (dateString: string) => {
-    if (!dateString) return '';
+  // 🎯 Form handlers
+  const updateField = (field: keyof typeof formData) => (value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Parse YYYY-MM-DD string til lokale dato-komponenter
-    const [year, month, day] = dateString.split('-');
-    return `${day}.${month}.${year}`;
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
-  // Kategori-alternativer (samme som CreateTaskScreen)
-  const categoryOptions = [
-    { value: 'Arbeid', label: '💼 Arbeid', color: '#007AFF' },
-    { value: 'Personlig', label: '👤 Personlig', color: '#4CAF50' },
-    { value: 'Helse', label: '🏃‍♂️ Helse', color: '#FF9800' },
-    { value: 'Økonomi', label: '💰 Økonomi', color: '#9C27B0' },
-    { value: 'Utdanning', label: '📚 Utdanning', color: '#2196F3' },
-    { value: 'Familie', label: '👨‍👩‍👧‍👦 Familie', color: '#E91E63' },
-    { value: 'Hobby', label: '🎨 Hobby', color: '#FF5722' },
-    { value: 'Annet', label: '📝 Annet', color: '#607D8B' }
-  ];
-
-  // Finn kategori-info basert på valgt kategori
-  const getCategoryInfo = (categoryValue: string) => {
-    return categoryOptions.find(cat => cat.value === categoryValue) || categoryOptions[1];
-  };
-
-  // Enkel dato-validering
-  const isValidDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date instanceof Date && !isNaN(date.getTime()) && dateString.match(/^\d{4}-\d{2}-\d{2}$/);
-  };
-
-  // Hent oppgave når skjermen lastes
+  // 📡 Fetch task data
   useEffect(() => {
     fetchTask();
   }, []);
@@ -81,456 +67,342 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select('id, title, description, due_date, priority, category, status, user_id, created_at')
         .eq('id', taskId)
         .single();
 
       if (error) {
         console.log('❌ Feil ved henting av oppgave:', error.message);
-        alert('Kunne ikke hente oppgaven');
+        Alert.alert('Feil', 'Kunne ikke hente oppgaven');
         navigation.goBack();
         return;
       }
 
       console.log('✅ Oppgave hentet:', data);
       setTask(data);
-      setTitle(data.title);
-      setDueDate(data.due_date);
-      setPriority(data.priority);
-      setCategory(data.category || 'Personlig'); // Sett kategori med fallback
-      setCompleted(data.status === 'completed');
-      
-      // Sett selectedDate basert på oppgavens due_date
-      if (data.due_date) {
-        setSelectedDate(new Date(data.due_date));
-      }
+      setFormData({
+        title: data.title,
+        description: data.description || '',
+        due_date: data.due_date,
+        priority: data.priority,
+        category: data.category || 'Personlig',
+        completed: data.status === 'completed',
+      });
     } catch (error) {
       console.log('💥 Uventet feil:', error);
-      alert('En uventet feil oppstod');
+      Alert.alert('Feil', 'En uventet feil oppstod');
       navigation.goBack();
     } finally {
       setLoading(false);
     }
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Tittel er påkrevd';
+    }
+
+    if (!formData.due_date) {
+      newErrors.due_date = 'Forfallsdato er påkrevd';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSaveTask = async () => {
     console.log('💾 LAGRE ENDRINGER TRYKKET');
 
-    // Validering
-    if (!title.trim()) {
-      alert('Tittel kan ikke være tom');
-      return;
-    }
-
-    if (!dueDate) {
-      alert('Frist må velges');
+    if (!validateForm()) {
+      Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
       return;
     }
 
     try {
-      setSaving(true); // Start loading
+      setSaving(true);
       console.log('💾 Lagrer endringer for oppgave:', taskId);
 
       const { error } = await supabase
         .from('tasks')
         .update({
-          title: title.trim(),
-          due_date: dueDate,
-          priority: priority,
-          category: category, // Legg til kategori
-          status: completed ? 'completed' : 'open',
+          title: formData.title.trim(),
+          description: formData.description.trim() || null,
+          due_date: formData.due_date,
+          priority: formData.priority,
+          category: formData.category,
+          status: formData.completed ? 'completed' : 'open',
         })
         .eq('id', taskId);
 
       if (error) {
         console.log('❌ Kunne ikke lagre:', error.message);
-        alert('Kunne ikke lagre endringene: ' + error.message);
+        Alert.alert('Feil', 'Kunne ikke lagre endringene: ' + error.message);
         return;
       }
 
       console.log('✅ Oppgave lagret!');
-      alert('Endringer lagret!');
+      Alert.alert('Suksess', 'Endringer lagret!');
       navigation.goBack();
     } catch (error) {
       console.log('💥 Uventet feil ved lagring:', error);
-      alert('En uventet feil oppstod');
+      Alert.alert('Feil', 'En uventet feil oppstod');
     } finally {
-      setSaving(false); // Stop loading
+      setSaving(false);
     }
   };
 
   const handleDeleteTask = async () => {
-    const shouldDelete = confirm('Er du sikker på at du vil slette denne oppgaven?');
-    
-    if (!shouldDelete) {
-      return;
-    }
+    Alert.alert(
+      'Slett oppgave',
+      'Er du sikker på at du vil slette denne oppgaven?',
+      [
+        { text: 'Avbryt', style: 'cancel' },
+        { 
+          text: 'Slett', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('tasks')
+                .delete()
+                .eq('id', taskId);
 
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', taskId);
+              if (error) {
+                console.log('❌ Kunne ikke slette:', error.message);
+                Alert.alert('Feil', 'Kunne ikke slette oppgaven: ' + error.message);
+                return;
+              }
 
-      if (error) {
-        console.log('❌ Kunne ikke slette:', error.message);
-        alert('Kunne ikke slette oppgaven: ' + error.message);
-        return;
-      }
-
-      console.log('✅ Oppgave slettet!');
-      alert('Oppgave slettet!');
-      navigation.goBack();
-    } catch (error) {
-      console.log('💥 Uventet feil ved sletting:', error);
-      alert('En uventet feil oppstod');
-    }
-  };
-
-  // Prioritet dropdown
-  const renderPriorityPicker = () => (
-    <View style={styles.dropdownContainer}>
-      <TouchableOpacity 
-        style={styles.dropdownButton}
-        onPress={() => setShowPriorityPicker(!showPriorityPicker)}
-      >
-        <Text style={styles.dropdownButtonText}>
-          {priority === 'High' ? '🔴 Høy' : 
-           priority === 'Medium' ? '🟡 Medium' : 
-           '🟢 Lav'}
-        </Text>
-        <Text style={styles.dropdownArrow}>
-          {showPriorityPicker ? '▲' : '▼'}
-        </Text>
-      </TouchableOpacity>
-
-      {showPriorityPicker && (
-        <View style={styles.dropdownOptions}>
-          <TouchableOpacity
-            style={[styles.dropdownOption, priority === 'High' && styles.dropdownOptionActive]}
-            onPress={() => {
-              setPriority('High');
-              setShowPriorityPicker(false);
-            }}
-          >
-            <Text style={[styles.dropdownOptionText, priority === 'High' && styles.dropdownOptionTextActive]}>
-              🔴 Høy
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.dropdownOption, priority === 'Medium' && styles.dropdownOptionActive]}
-            onPress={() => {
-              setPriority('Medium');
-              setShowPriorityPicker(false);
-            }}
-          >
-            <Text style={[styles.dropdownOptionText, priority === 'Medium' && styles.dropdownOptionTextActive]}>
-              🟡 Medium
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.dropdownOption, { borderBottomWidth: 0 }, priority === 'Low' && styles.dropdownOptionActive]}
-            onPress={() => {
-              setPriority('Low');
-              setShowPriorityPicker(false);
-            }}
-          >
-            <Text style={[styles.dropdownOptionText, priority === 'Low' && styles.dropdownOptionTextActive]}>
-              🟢 Lav
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
-  // Kategori dropdown - MED SCROLLVIEW for å unngå overflow
-  const renderCategoryPicker = () => (
-    <View style={styles.dropdownContainer}>
-      <TouchableOpacity 
-        style={[styles.dropdownButton, { borderLeftWidth: 4, borderLeftColor: getCategoryInfo(category).color }]}
-        onPress={() => setShowCategoryPicker(!showCategoryPicker)}
-      >
-        <Text style={styles.dropdownButtonText}>
-          {getCategoryInfo(category).label}
-        </Text>
-        <Text style={styles.dropdownArrow}>
-          {showCategoryPicker ? '▲' : '▼'}
-        </Text>
-      </TouchableOpacity>
-
-      {showCategoryPicker && (
-        <View style={styles.dropdownOptionsContainer}>
-          <ScrollView 
-            style={styles.dropdownOptionsScroll}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={true}
-          >
-            {categoryOptions.map((option, index) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.dropdownOption,
-                  category === option.value && styles.dropdownOptionActive,
-                  { borderLeftWidth: 4, borderLeftColor: option.color },
-                  // Fjern border på siste element
-                  index === categoryOptions.length - 1 && { borderBottomWidth: 0 }
-                ]}
-                onPress={() => {
-                  setCategory(option.value);
-                  setShowCategoryPicker(false);
-                }}
-              >
-                <Text style={[
-                  styles.dropdownOptionText,
-                  category === option.value && styles.dropdownOptionTextActive
-                ]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </View>
-  );
-
-  // Kalender-komponent (samme som i CreateTaskScreen)
-  const renderCalendar = () => {
-    const today = new Date();
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-    
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startDayOfWeek = firstDay.getDay();
-    
-    const monthNames = [
-      'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-      'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    
-    const weekDays = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
-    
-    const days = [];
-    
-    // Tomme celler før månedens start
-    for (let i = 0; i < startDayOfWeek; i++) {
-      days.push(<View key={`empty-${i}`} style={styles.emptyDay} />);
-    }
-    
-    // Dager i måneden
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const isToday = date.toDateString() === today.toDateString();
-      const isSelected = date.toDateString() === selectedDate.toDateString();
-      const isPast = date < today && !isToday;
-      
-      days.push(
-        <TouchableOpacity
-          key={day}
-          style={[
-            styles.dayButton,
-            isToday && styles.todayButton,
-            isSelected && styles.selectedDayButton,
-            isPast && styles.pastDayButton
-          ]}
-          onPress={() => {
-            if (!isPast) {
-              setSelectedDate(date);
-              setDueDate(formatDate(date));
-              setShowCalendar(false);
+              console.log('✅ Oppgave slettet!');
+              Alert.alert('Suksess', 'Oppgave slettet!');
+              navigation.goBack();
+            } catch (error) {
+              console.log('💥 Uventet feil ved sletting:', error);
+              Alert.alert('Feil', 'En uventet feil oppstod');
             }
-          }}
-          disabled={isPast}
-        >
-          <Text style={[
-            styles.dayText,
-            isToday && styles.todayText,
-            isSelected && styles.selectedDayText,
-            isPast && styles.pastDayText
-          ]}>
-            {day}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-    
-    return (
-      <Modal visible={showCalendar} transparent animationType="fade">
-        <View style={styles.calendarOverlay}>
-          <View style={styles.calendarContainer}>
-            <View style={styles.calendarHeader}>
-              <TouchableOpacity
-                onPress={() => {
-                  const prevMonth = new Date(selectedDate);
-                  prevMonth.setMonth(prevMonth.getMonth() - 1);
-                  setSelectedDate(prevMonth);
-                }}
-                style={styles.navButton}
-              >
-                <Text style={styles.navButtonText}>‹</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.monthYearText}>
-                {monthNames[currentMonth]} {currentYear}
-              </Text>
-              
-              <TouchableOpacity
-                onPress={() => {
-                  const nextMonth = new Date(selectedDate);
-                  nextMonth.setMonth(nextMonth.getMonth() + 1);
-                  setSelectedDate(nextMonth);
-                }}
-                style={styles.navButton}
-              >
-                <Text style={styles.navButtonText}>›</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.weekDaysRow}>
-              {weekDays.map(day => (
-                <Text key={day} style={styles.weekDayText}>{day}</Text>
-              ))}
-            </View>
-            
-            <View style={styles.calendarGrid}>
-              {days}
-            </View>
-            
-            <View style={styles.calendarButtons}>
-              <TouchableOpacity 
-                style={styles.cancelCalendarButton}
-                onPress={() => setShowCalendar(false)}
-              >
-                <Text style={styles.cancelCalendarText}>Avbryt</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+          }
+        }
+      ]
     );
   };
 
+  // 🎨 Priority Button - reusable component
+  const PriorityButton = ({ priority, label, color }: {
+    priority: 'Low' | 'Medium' | 'High';
+    label: string;
+    color: string;
+  }) => (
+    <Button
+      variant={formData.priority === priority ? 'primary' : 'secondary'}
+      size="small"
+      onPress={() => updateField('priority')(priority)}
+      style={{
+        flex: 1,
+        marginHorizontal: 4,
+        borderColor: color,
+        backgroundColor: formData.priority === priority ? color : 'transparent'
+      }}
+    >
+      {label}
+    </Button>
+  );
+
+  // 🏷️ Category Button - reusable component
+  const CategoryButton = ({ category }: { category: typeof CATEGORY_OPTIONS[0] }) => (
+    <Button
+      variant={formData.category === category.value ? 'primary' : 'secondary'}
+      size="small"
+      onPress={() => updateField('category')(category.value)}
+      style={{
+        marginRight: 8,
+        marginBottom: 8,
+        borderColor: category.color,
+        backgroundColor: formData.category === category.value ? category.color : 'transparent'
+      }}
+    >
+      {category.label}
+    </Button>
+  );
+
+  // 🔄 Loading state
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Laster oppgave...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text variant="body1" color="secondary" style={styles.loadingText}>
+          Laster oppgave...
+        </Text>
       </View>
     );
   }
 
+  // ❌ Error state
   if (!task) {
     return (
-      <View style={styles.errorContainer}>
-        <Text>Oppgaven ble ikke funnet</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Gå tilbake</Text>
-        </TouchableOpacity>
+      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+        <Text variant="h2" color="primary" style={styles.errorTitle}>
+          Oppgaven ble ikke funnet
+        </Text>
+        <Button
+          variant="primary"
+          size="large"
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          Gå tilbake
+        </Button>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Rediger oppgave</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* 📱 Header */}
+      <Header 
+        title="Rediger oppgave"
+        subtitle={`Opprettet ${new Date(task.created_at || Date.now()).toLocaleDateString('nb-NO')}`}
+        showThemeToggle={false}
+        rightComponent={
+          <Button
+            variant="secondary"
+            size="small"
+            onPress={() => navigation.goBack()}
+            disabled={saving}
+          >
+            Lukk
+          </Button>
+        }
+      />
 
-      {/* Tittel input */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Tittel *</Text>
-        <TextInput
-          placeholder="Skriv inn tittel..."
-          value={title}
-          onChangeText={setTitle}
-          style={styles.textInput}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* 📝 Title Input */}
+        <Input
+          label="Tittel *"
+          value={formData.title}
+          onChangeText={updateField('title')}
+          placeholder="Skriv inn oppgavetittel..."
+          error={errors.title}
+          testID="task-title-input"
         />
-      </View>
 
-      {/* Dato picker med kalender */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Frist *</Text>
-        <TouchableOpacity
-          style={styles.datePickerButton}
-          onPress={() => setShowCalendar(true)}
-        >
-          <Text style={styles.datePickerText}>
-            {dueDate ? formatDateDisplay(dueDate) : 'Velg dato'}
+        {/* 📄 Description Input */}
+        <Input
+          label="Beskrivelse"
+          value={formData.description}
+          onChangeText={updateField('description')}
+          placeholder="Legg til detaljer om oppgaven (valgfritt)..."
+          variant="textarea"
+          hint="Detaljert beskrivelse hjelper deg å huske hva som må gjøres"
+          testID="task-description-input"
+        />
+
+        {/* 📅 Due Date Picker - Using new DatePicker molecule! */}
+        <DatePicker
+          label="Forfallsdato *"
+          value={formData.due_date}
+          onDateChange={updateField('due_date')}
+          error={errors.due_date}
+          hint="Trykk for å åpne kalender"
+          placeholder="Velg forfallsdato..."
+          testID="task-due-date-picker"
+        />
+
+        {/* ⚡ Priority Selection */}
+        <View style={styles.section}>
+          <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
+            Prioritet *
           </Text>
-          <Text style={styles.calendarIcon}>📅</Text>
-        </TouchableOpacity>
-        <Text style={styles.helpText}>
-          Trykk for å åpne kalender
-        </Text>
-      </View>
-
-      {/* Prioritet dropdown */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Prioritet *</Text>
-        {renderPriorityPicker()}
-      </View>
-
-      {/* Kategori dropdown */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Kategori *</Text>
-        {renderCategoryPicker()}
-      </View>
-
-      {/* Completed checkbox */}
-      <View style={styles.inputContainer}>
-        <TouchableOpacity 
-          style={styles.statusToggle}
-          onPress={() => setCompleted(!completed)}
-        >
-          <View style={[styles.checkbox, completed && styles.checkboxChecked]}>
-            {completed && <Text style={styles.checkmark}>✓</Text>}
+          <View style={styles.priorityButtons}>
+            <PriorityButton priority="Low" label="🟢 Lav" color="#4CAF50" />
+            <PriorityButton priority="Medium" label="🟡 Medium" color="#FF9800" />
+            <PriorityButton priority="High" label="🔴 Høy" color="#F44336" />
           </View>
-          <Text style={styles.statusText}>
-            {completed ? 'Oppgave fullført' : 'Oppgave ikke fullført'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        </View>
 
-      {/* Action knapper */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.saveButton, saving && styles.buttonLoading]} 
+        {/* 🏷️ Category Selection */}
+        <View style={styles.section}>
+          <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
+            Kategori *
+          </Text>
+          <View style={styles.categoryButtons}>
+            {CATEGORY_OPTIONS.map((category) => (
+              <CategoryButton key={category.value} category={category} />
+            ))}
+          </View>
+        </View>
+
+        {/* ✅ Completion Status */}
+        <View style={styles.section}>
+          <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
+            Status
+          </Text>
+          <Button
+            variant={formData.completed ? 'primary' : 'secondary'}
+            size="medium"
+            onPress={() => updateField('completed')(!formData.completed)}
+            style={{
+              ...styles.statusButton,
+              backgroundColor: formData.completed ? '#4CAF50' : 'transparent',
+              borderColor: '#4CAF50',
+            }}
+          >
+            {formData.completed ? '✅ Fullført' : '⏳ Ikke fullført'}
+          </Button>
+        </View>
+
+        {/* 📊 Task Summary */}
+        <View style={[styles.summaryCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+          <Text variant="subtitle2" color="primary" style={styles.summaryTitle}>
+            📋 Oppgaveinformasjon
+          </Text>
+          <Text variant="body2" color="secondary">
+            Status: {formData.completed ? 'Fullført' : 'Åpen'}
+          </Text>
+          <Text variant="body2" color="secondary">
+            Prioritet: {formData.priority}
+          </Text>
+          <Text variant="body2" color="secondary">
+            Kategori: {CATEGORY_OPTIONS.find(c => c.value === formData.category)?.label}
+          </Text>
+          <Text variant="body2" color="secondary">
+            Opprettet: {new Date(task.created_at || Date.now()).toLocaleDateString('nb-NO')}
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* 🚀 Action Buttons */}
+      <View style={styles.actionButtons}>
+        <Button
+          variant="secondary"
+          size="large"
+          onPress={handleDeleteTask}
+          disabled={saving}
+          style={styles.deleteButton}
+        >
+          🗑️ Slett
+        </Button>
+        
+        <Button
+          variant="primary"
+          size="large"
           onPress={handleSaveTask}
           disabled={saving}
+          style={styles.saveButton}
         >
           {saving ? (
             <View style={styles.buttonContent}>
               <ActivityIndicator size="small" color="#fff" style={styles.spinner} />
-              <Text style={styles.buttonText}>Lagrer...</Text>
+              <Text variant="body1" style={{ color: '#fff', marginLeft: 8 }}>
+                Lagrer...
+              </Text>
             </View>
           ) : (
-            <Text style={styles.buttonText}>Lagre endringer</Text>
+            '💾 Lagre endringer'
           )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.deleteButton, saving && styles.buttonDisabled]} 
-          onPress={handleDeleteTask}
-          disabled={saving}
-        >
-          <Text style={styles.buttonText}>Slett oppgave</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.cancelButton, saving && styles.buttonDisabled]} 
-          onPress={() => navigation.goBack()}
-          disabled={saving}
-        >
-          <Text style={[styles.cancelButtonText, saving && styles.disabledText]}>
-            Avbryt
-          </Text>
-        </TouchableOpacity>
+        </Button>
       </View>
-
-      {/* Kalender modal */}
-      {renderCalendar()}
     </View>
   );
 }
@@ -539,319 +411,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#333',
-    textAlign: 'center',
+  scrollView: {
+    flex: 1,
   },
-  inputContainer: {
+  section: {
     marginBottom: 20,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  sectionTitle: {
     marginBottom: 8,
   },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    fontSize: 16,
-    elevation: 2,
-  },
-  helpText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  dropdownContainer: {
-    marginBottom: 10,
-  },
-  dropdownButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
+  priorityButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    elevation: 2,
+    marginHorizontal: -4,
   },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  dropdownArrow: {
-    fontSize: 14,
-    color: '#666',
-  },
-  dropdownOptions: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    elevation: 5,
-    marginTop: -1,
-  },
-  // NY: Container for kategori-dropdown med begrenset høyde
-  dropdownOptionsContainer: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    elevation: 5,
-    marginTop: -1,
-    maxHeight: 200, // Begrens høyden til 200px
-  },
-  // NY: Scrollbar inni kategori-dropdown
-  dropdownOptionsScroll: {
-    maxHeight: 200,
-  },
-  dropdownOption: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dropdownOptionActive: {
-    backgroundColor: '#007AFF',
-  },
-  dropdownOptionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  dropdownOptionTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  statusToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    elevation: 2,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  statusText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  buttonContainer: {
-    marginTop: 30,
-  },
-  saveButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 3,
-  },
-  deleteButton: {
-    backgroundColor: '#ff4444',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 3,
-  },
-  cancelButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 2,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  backButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Kalender styling (samme som CreateTaskScreen)
-  datePickerButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    elevation: 2,
-  },
-  datePickerText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  calendarIcon: {
-    fontSize: 18,
-  },
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    margin: 20,
-    maxWidth: 350,
-    elevation: 10,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  navButton: {
-    padding: 10,
-  },
-  navButtonText: {
-    fontSize: 24,
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
-  monthYearText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  weekDayText: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-    paddingVertical: 5,
-  },
-  calendarGrid: {
+  categoryButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  emptyDay: {
-    width: '14.28%',
-    height: 40,
+  statusButton: {
+    alignSelf: 'flex-start',
   },
-  dayButton: {
-    width: '14.28%',
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 6,
+  summaryCard: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 20,
   },
-  todayButton: {
-    backgroundColor: '#007AFF',
+  summaryTitle: {
+    marginBottom: 8,
   },
-  selectedDayButton: {
-    backgroundColor: '#4CAF50',
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 16,
   },
-  pastDayButton: {
-    opacity: 0.3,
+  deleteButton: {
+    flex: 1,
   },
-  dayText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  todayText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  selectedDayText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  pastDayText: {
-    color: '#ccc',
-  },
-  calendarButtons: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  cancelCalendarButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-    backgroundColor: '#f0f0f0',
-  },
-  cancelCalendarText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Loading states styling
-  buttonLoading: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
+  saveButton: {
+    flex: 2,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -861,7 +460,25 @@ const styles = StyleSheet.create({
   spinner: {
     marginRight: 8,
   },
-  disabledText: {
-    color: '#999',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  backButton: {
+    paddingHorizontal: 32,
   },
 });
