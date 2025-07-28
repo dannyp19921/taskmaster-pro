@@ -1,7 +1,7 @@
-// /src/screens/TaskListScreen.tsx - Using organisms! SO MUCH CLEANER! 🚀
+// /src/screens/TaskListScreen.tsx - Enhanced with modern loading states! 🚀
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 // 🎯 Modern imports - SUPER Clean!
@@ -12,7 +12,7 @@ import TaskCard from '../features/tasks/components/TaskCard';
 import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
 import { EmptyState } from '../shared/ui/organisms/EmptyState';
 import { Header } from '../shared/ui/organisms/Header';
-import { Button } from '../shared/ui';
+import { Button, SkeletonList } from '../shared/ui';
 
 // 🌐 Context & Utils
 import { useTheme } from '../context/ThemeContext';
@@ -178,11 +178,10 @@ export default function TaskListScreen({ navigation }: any) {
         onClearAll={clearFilters}
       />
 
-      {/* 📋 Content */}
+      {/* 📋 Content with Enhanced Loading States */}
       {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.info} />
-        </View>
+        // 🌊 Modern skeleton loading!
+        <SkeletonList count={6} testID="task-list-skeleton" />
       ) : filteredTasks.length === 0 ? (
         <EmptyState {...getEmptyStateProps()} />
       ) : (
@@ -236,11 +235,6 @@ const styles = StyleSheet.create({
   },
   dashboardButton: { 
     marginBottom: 20,
-  },
-  centerContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',
   },
   list: { 
     flex: 1,
