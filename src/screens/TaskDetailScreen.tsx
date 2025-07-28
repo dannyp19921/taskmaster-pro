@@ -1,10 +1,11 @@
-// /src/screens/TaskDetailScreen.tsx - Clean architecture med DatePicker! 🚀
+// /src/screens/TaskDetailScreen.tsx - REFAKTORERT: Bruker useTasks hook! 🚀
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 
-// 🎯 Services & Types
-import { supabase } from '../services/supabase';
+// 🎯 ENDRING: Bruker useTasks i stedet for direkte Supabase!
+import { useTasks } from '../features/tasks/hooks/useTasks';
+import { Task } from '../features/tasks/types/task.types';
 
 // 🎨 UI components - Atomic design!
 import { Button, Input, Text } from '../shared/ui';
@@ -15,21 +16,12 @@ import { Header } from '../shared/ui/organisms/Header';
 import { useTheme } from '../context/ThemeContext';
 import { CATEGORY_OPTIONS } from '../shared/utils/categories';
 
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  due_date: string;
-  priority: string;
-  category: string;
-  status: string;
-  user_id: string;
-  created_at?: string; // Optional since it might not always be present
-}
-
 export default function TaskDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { taskId } = route.params;
+
+  // 🎯 ENDRING: Bruker useTasks hook i stedet for direkte Supabase
+  const { tasks, updateTask, deleteTask, loading: tasksLoading } = useTasks();
 
   // 🎯 State management
   const [task, setTask] = useState<Task | null>(null);
@@ -42,7 +34,6 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     completed: false,
   });
   
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -56,46 +47,29 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     }
   };
 
-  // 📡 Fetch task data
+  // 📡 ENDRING: Bruker tasks fra useTasks i stedet for separat fetch
   useEffect(() => {
-    fetchTask();
-  }, []);
-
-  const fetchTask = async () => {
-    console.log('📡 Henter oppgave med ID:', taskId);
-
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('id, title, description, due_date, priority, category, status, user_id, created_at')
-        .eq('id', taskId)
-        .single();
-
-      if (error) {
-        console.log('❌ Feil ved henting av oppgave:', error.message);
-        Alert.alert('Feil', 'Kunne ikke hente oppgaven');
+    if (tasks.length > 0) {
+      const foundTask = tasks.find(t => t.id === taskId);
+      
+      if (foundTask) {
+        console.log('✅ Oppgave funnet i existing state:', foundTask);
+        setTask(foundTask);
+        setFormData({
+          title: foundTask.title,
+          description: foundTask.description || '',
+          due_date: foundTask.due_date,
+          priority: foundTask.priority,
+          category: foundTask.category || 'Personlig',
+          completed: foundTask.status === 'completed',
+        });
+      } else {
+        console.log('❌ Oppgave ikke funnet i state');
+        Alert.alert('Feil', 'Oppgaven ble ikke funnet');
         navigation.goBack();
-        return;
       }
-
-      console.log('✅ Oppgave hentet:', data);
-      setTask(data);
-      setFormData({
-        title: data.title,
-        description: data.description || '',
-        due_date: data.due_date,
-        priority: data.priority,
-        category: data.category || 'Personlig',
-        completed: data.status === 'completed',
-      });
-    } catch (error) {
-      console.log('💥 Uventet feil:', error);
-      Alert.alert('Feil', 'En uventet feil oppstod');
-      navigation.goBack();
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [tasks, taskId, navigation]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -112,6 +86,7 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     return Object.keys(newErrors).length === 0;
   };
 
+  // 💾 ENDRING: Bruker updateTask fra useTasks hook
   const handleSaveTask = async () => {
     console.log('💾 LAGRE ENDRINGER TRYKKET');
 
@@ -124,35 +99,27 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       setSaving(true);
       console.log('💾 Lagrer endringer for oppgave:', taskId);
 
-      const { error } = await supabase
-        .from('tasks')
-        .update({
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
-          due_date: formData.due_date,
-          priority: formData.priority,
-          category: formData.category,
-          status: formData.completed ? 'completed' : 'open',
-        })
-        .eq('id', taskId);
+      const success = await updateTask(taskId, {
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        due_date: formData.due_date,
+        priority: formData.priority,
+        category: formData.category,
+        status: formData.completed ? 'completed' : 'open',
+      });
 
-      if (error) {
-        console.log('❌ Kunne ikke lagre:', error.message);
-        Alert.alert('Feil', 'Kunne ikke lagre endringene: ' + error.message);
-        return;
+      if (success) {
+        console.log('✅ Oppgave lagret via useTasks hook!');
+        Alert.alert('Suksess', 'Endringer lagret!');
+        navigation.goBack();
       }
-
-      console.log('✅ Oppgave lagret!');
-      Alert.alert('Suksess', 'Endringer lagret!');
-      navigation.goBack();
-    } catch (error) {
-      console.log('💥 Uventet feil ved lagring:', error);
-      Alert.alert('Feil', 'En uventet feil oppstod');
+      // Error handling gjøres automatisk i useTasks hook
     } finally {
       setSaving(false);
     }
   };
 
+  // 🗑️ ENDRING: Bruker deleteTask fra useTasks hook
   const handleDeleteTask = async () => {
     Alert.alert(
       'Slett oppgave',
@@ -163,25 +130,14 @@ export default function TaskDetailScreen({ navigation, route }: any) {
           text: 'Slett', 
           style: 'destructive', 
           onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('tasks')
-                .delete()
-                .eq('id', taskId);
-
-              if (error) {
-                console.log('❌ Kunne ikke slette:', error.message);
-                Alert.alert('Feil', 'Kunne ikke slette oppgaven: ' + error.message);
-                return;
-              }
-
-              console.log('✅ Oppgave slettet!');
+            const success = await deleteTask(taskId);
+            
+            if (success) {
+              console.log('✅ Oppgave slettet via useTasks hook!');
               Alert.alert('Suksess', 'Oppgave slettet!');
               navigation.goBack();
-            } catch (error) {
-              console.log('💥 Uventet feil ved sletting:', error);
-              Alert.alert('Feil', 'En uventet feil oppstod');
             }
+            // Error handling gjøres automatisk i useTasks hook
           }
         }
       ]
@@ -226,8 +182,8 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     </Button>
   );
 
-  // 🔄 Loading state
-  if (loading) {
+  // 🔄 ENDRING: Loading state fra useTasks hook
+  if (tasksLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -238,12 +194,15 @@ export default function TaskDetailScreen({ navigation, route }: any) {
     );
   }
 
-  // ❌ Error state
+  // ❌ Error state - task ikke funnet i state
   if (!task) {
     return (
       <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
         <Text variant="h2" color="primary" style={styles.errorTitle}>
           Oppgaven ble ikke funnet
+        </Text>
+        <Text variant="body1" color="secondary" style={styles.errorSubtitle}>
+          Oppgaven eksisterer ikke eller du har ikke tilgang til den.
         </Text>
         <Button
           variant="primary"
@@ -475,6 +434,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorTitle: {
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorSubtitle: {
     marginBottom: 20,
     textAlign: 'center',
   },
