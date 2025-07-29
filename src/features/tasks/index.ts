@@ -2,7 +2,6 @@
 // 🎯 Hooks
 export { useTasks } from './hooks/useTasks';
 export { useTaskFilters } from './hooks/useTaskFilters';
-export { useCreateTask } from './hooks/useCreateTask';
 
 // 🏗️ Components
 export { default as TaskCard } from './components/TaskCard';

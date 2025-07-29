@@ -1,8 +1,9 @@
-// /src/context/ThemeContext.tsx - Dark mode system
+// /src/context/ThemeContext.tsx - Med AsyncStorage persistence! 🌙
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Theme colors
+// Theme colors (unchanged)
 export const lightTheme = {
   // Backgrounds
   background: '#f5f5f5',
@@ -65,6 +66,7 @@ interface ThemeContextType {
   theme: Theme;
   isDarkMode: boolean;
   toggleTheme: () => void;
+  setTheme: (isDark: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -73,17 +75,65 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
+const THEME_STORAGE_KEY = '@taskmaster_theme_preference';
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 🔄 Load saved theme preference on app start
+  useEffect(() => {
+    loadThemePreference();
+  }, []);
+
+  const loadThemePreference = async () => {
+    try {
+      const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+      if (savedTheme !== null) {
+        const isDark = JSON.parse(savedTheme);
+        setIsDarkMode(isDark);
+        console.log('🎨 Loaded theme preference:', isDark ? 'dark' : 'light');
+      } else {
+        // Default to system preference if available
+        // For now, default to light mode
+        console.log('🎨 No saved theme, defaulting to light mode');
+      }
+    } catch (error) {
+      console.error('❌ Error loading theme preference:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveThemePreference = async (isDark: boolean) => {
+    try {
+      await AsyncStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(isDark));
+      console.log('💾 Saved theme preference:', isDark ? 'dark' : 'light');
+    } catch (error) {
+      console.error('❌ Error saving theme preference:', error);
+    }
+  };
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    saveThemePreference(newTheme);
+  };
+
+  const setTheme = (isDark: boolean) => {
+    setIsDarkMode(isDark);
+    saveThemePreference(isDark);
   };
 
   const theme = isDarkMode ? darkTheme : lightTheme;
 
+  // Don't render children until theme is loaded
+  if (isLoading) {
+    return null; // Or a splash screen component
+  }
+
   return (
-    <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,4 +1,4 @@
-// /src/features/tasks/hooks/useTasks.ts - RIKTIG VERSJON
+// /src/features/tasks/hooks/useTasks.ts - KONSOLIDERT: Alle task operasjoner i én hook! 🚀
 import { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '../../../services/supabase';
@@ -10,6 +10,9 @@ interface UseTasksReturn {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
+  
+  // NYTT: CreateTask state
+  creating: boolean;
 
   // Actions
   fetchTasks: (isRefreshing?: boolean) => Promise<void>;
@@ -33,6 +36,7 @@ export const useTasks = (): UseTasksReturn => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [creating, setCreating] = useState(false); // NYTT: For createTask loading
   const [error, setError] = useState<string | null>(null);
 
   // 📥 Fetch tasks from database
@@ -79,16 +83,29 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  // ➕ Create new task
+  // ➕ FORBEDRET: Create new task med bedre validering og feedback
   const createTask = useCallback(async (taskData: CreateTaskDto): Promise<Task | null> => {
     try {
+      setCreating(true);
+      setError(null);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Bruker ikke logget inn');
       }
 
+      // NYTT: Frontend validering
+      if (!taskData.title.trim()) {
+        throw new Error('Tittel er påkrevd');
+      }
+
+      if (!taskData.due_date) {
+        throw new Error('Forfallsdato er påkrevd');
+      }
+
       const newTask = {
         ...taskData,
+        title: taskData.title.trim(),
         user_id: user.id,
         status: 'open' as const,
         created_at: new Date().toISOString(),
@@ -107,12 +124,22 @@ export const useTasks = (): UseTasksReturn => {
       // Oppdater lokal state
       setTasks(prevTasks => [...prevTasks, data]);
       
+      // NYTT: Success feedback
+      Alert.alert(
+        'Suksess! 🎉', 
+        `Oppgaven "${data.title}" ble opprettet`,
+        [{ text: 'OK' }]
+      );
+      
       return data;
     } catch (err: any) {
       const errorMessage = err.message || 'Kunne ikke opprette oppgave';
+      setError(errorMessage);
       Alert.alert('Feil', errorMessage);
       console.error('Create task error:', err);
       return null;
+    } finally {
+      setCreating(false);
     }
   }, []);
 
@@ -185,6 +212,11 @@ export const useTasks = (): UseTasksReturn => {
     fetchTasks(true);
   }, [fetchTasks]);
 
+  // NYTT: Reset error function (for CreateTaskScreen)
+  const resetError = useCallback(() => {
+    setError(null);
+  }, []);
+
   // 📊 Computed values
   const activeTasks = tasks.filter(task => task.status === 'open');
   const completedTasks = tasks.filter(task => task.status === 'completed');
@@ -205,6 +237,7 @@ export const useTasks = (): UseTasksReturn => {
     tasks,
     loading,
     refreshing,
+    creating, // NYTT: For createTask loading state
     error,
 
     // Actions
