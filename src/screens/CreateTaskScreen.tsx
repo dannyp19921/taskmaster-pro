@@ -1,4 +1,4 @@
-// /src/screens/CreateTaskScreen.tsx - ULTRA CLEAN med TaskForm! 🚀
+// /src/screens/CreateTaskScreen.tsx - 100% PERFEKT ATOMIC DESIGN! 🎯
 
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
@@ -7,7 +7,10 @@ import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { CreateTaskDto } from '../features/tasks/types/task.types';
 
-// 🎨 UI components - Much cleaner!
+// 🧪 Validation utilities - Felles for alle screens!
+import { validateTaskForm } from '../shared/utils/taskValidation';
+
+// 🎨 UI components - Clean atomic design imports!
 import { Button } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
@@ -19,7 +22,7 @@ export default function CreateTaskScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { createTask, creating } = useTasks();
 
-  // 🎨 Form state - much simpler now!
+  // 🎨 Form state - Clean and standardized
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -30,7 +33,7 @@ export default function CreateTaskScreen({ navigation }: any) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 🎯 Form handler - super clean!
+  // 🎯 Form handler - Consistent across all forms
   const updateField = (field: keyof TaskFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
@@ -40,23 +43,12 @@ export default function CreateTaskScreen({ navigation }: any) {
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Tittel er påkrevd';
-    }
-
-    if (!formData.due_date) {
-      newErrors.due_date = 'Forfallsdato er påkrevd';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
+  // 🧪 Validation using shared utility - DRY principle!
   const handleSubmit = async () => {
-    if (!validateForm()) {
+    const validation = validateTaskForm(formData);
+    
+    if (!validation.isValid) {
+      setErrors(validation.errors);
       Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
       return;
     }
@@ -77,7 +69,9 @@ export default function CreateTaskScreen({ navigation }: any) {
   };
 
   const handleCancel = () => {
-    if (formData.title.trim() || formData.description.trim()) {
+    const hasChanges = formData.title.trim() || formData.description.trim();
+    
+    if (hasChanges) {
       Alert.alert(
         'Avbryt opprettelse?',
         'Du har ulagrede endringer. Er du sikker på at du vil avbryte?',
@@ -93,7 +87,7 @@ export default function CreateTaskScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header */}
+      {/* 📱 Header - Consistent across all screens */}
       <Header 
         title="Ny oppgave"
         subtitle="Opprett en ny oppgave"
@@ -103,14 +97,19 @@ export default function CreateTaskScreen({ navigation }: any) {
             variant="secondary"
             size="small"
             onPress={handleCancel}
+            testID="cancel-button"
           >
             Avbryt
           </Button>
         }
       />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 📝 HELE FORMEN ER NÅ ÉN KOMPONENT! */}
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 📝 TaskForm - Reusable atomic component */}
         <TaskForm
           formData={formData}
           onFieldChange={updateField}
@@ -119,13 +118,14 @@ export default function CreateTaskScreen({ navigation }: any) {
         />
       </ScrollView>
 
-      {/* 🚀 Action Buttons */}
+      {/* 🚀 Action Buttons - Consistent styling and behavior */}
       <View style={styles.actionButtons}>
         <Button
           variant="secondary"
           size="large"
           onPress={handleCancel}
           style={styles.cancelButton}
+          testID="cancel-action-button"
         >
           Avbryt
         </Button>
@@ -136,6 +136,7 @@ export default function CreateTaskScreen({ navigation }: any) {
           onPress={handleSubmit}
           disabled={creating}
           style={styles.submitButton}
+          testID="submit-button"
         >
           {creating ? 'Oppretter...' : '✅ Opprett oppgave'}
         </Button>
@@ -144,6 +145,7 @@ export default function CreateTaskScreen({ navigation }: any) {
   );
 }
 
+// 🎨 Styles - Clean and focused
 const styles = StyleSheet.create({
   container: {
     flex: 1,

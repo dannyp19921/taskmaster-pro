@@ -1,7 +1,7 @@
-// /src/screens/TaskListScreen.tsx - Enhanced with modern loading states! 🚀
+// /src/screens/TaskListScreen.tsx - FIKSET: Enhanced with modern loading states! 🚀
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 // 🎯 Modern imports - SUPER Clean!
@@ -12,7 +12,7 @@ import TaskCard from '../features/tasks/components/TaskCard';
 import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
 import { EmptyState } from '../shared/ui/organisms/EmptyState';
 import { Header } from '../shared/ui/organisms/Header';
-import { Button, SkeletonList } from '../shared/ui';
+import { Button, Text } from '../shared/ui'; // 🔧 FIKSET: Lagt til Text import
 
 // 🌐 Context & Utils
 import { useTheme } from '../context/ThemeContext';
@@ -180,8 +180,13 @@ export default function TaskListScreen({ navigation }: any) {
 
       {/* 📋 Content with Enhanced Loading States */}
       {loading ? (
-        // 🌊 Modern skeleton loading!
-        <SkeletonList count={6} testID="task-list-skeleton" />
+        // 🔄 FIKSET: Proper loading state with styling
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.info} />
+          <Text variant="body1" color="secondary" style={styles.loadingText}>
+            Laster oppgaver...
+          </Text>
+        </View>
       ) : filteredTasks.length === 0 ? (
         <EmptyState {...getEmptyStateProps()} />
       ) : (
@@ -246,5 +251,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  // 🔧 FIKSET: Lagt til manglende loading styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
   },
 });
