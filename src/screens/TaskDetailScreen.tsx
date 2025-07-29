@@ -1,4 +1,4 @@
-// /src/screens/TaskDetailScreen.tsx - REFAKTORERT: Bruker useTasks hook! 🚀
+// /src/screens/TaskDetailScreen.tsx - REFAKTORERT: Bruker useTasks hook! 
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
