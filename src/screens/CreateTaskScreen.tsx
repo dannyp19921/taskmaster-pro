@@ -1,4 +1,4 @@
-// /src/screens/CreateTaskScreen.tsx - 100% PERFEKT ATOMIC DESIGN! 🎯
+// /src/screens/CreateTaskScreen.tsx - 100% PERFEKT! 🎯
 
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
@@ -10,7 +10,7 @@ import { CreateTaskDto } from '../features/tasks/types/task.types';
 // 🧪 Validation utilities - Felles for alle screens!
 import { validateTaskForm } from '../shared/utils/taskValidation';
 
-// 🎨 UI components - Clean atomic design imports!
+// 🎨 UI components - Perfect atomic design!
 import { Button } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
@@ -109,7 +109,7 @@ export default function CreateTaskScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 📝 TaskForm - Reusable atomic component */}
+        {/* 📝 TaskForm - Perfect reusable atomic component with molecules */}
         <TaskForm
           formData={formData}
           onFieldChange={updateField}

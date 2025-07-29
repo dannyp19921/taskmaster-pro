@@ -1,4 +1,4 @@
-// /src/screens/TaskDetailScreen.tsx - 100% PERFEKT ATOMIC DESIGN! 🎯
+// /src/screens/TaskDetailScreen.tsx - 100% PERFEKT! 🎯
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
@@ -10,7 +10,7 @@ import { Task } from '../features/tasks/types/task.types';
 // 🧪 Validation utilities - Shared with CreateTaskScreen!
 import { validateTaskForm } from '../shared/utils/taskValidation';
 
-// 🎨 UI components - Clean atomic design imports!
+// 🎨 UI components - Perfect atomic design!
 import { Button, Text } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
@@ -197,7 +197,7 @@ export default function TaskDetailScreen({ navigation, route }: TaskDetailScreen
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 📝 TaskForm - Same reusable component as CreateTaskScreen */}
+        {/* 📝 TaskForm - Perfect reusable component with molecules */}
         <TaskForm
           formData={formData}
           onFieldChange={updateField}

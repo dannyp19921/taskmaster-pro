@@ -1,4 +1,4 @@
-// /src/features/tasks/components/TaskForm.tsx - Gjenbrukbar task form! 📝
+// /src/features/tasks/components/TaskForm.tsx - PERFEKT med molecules! 🧬
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -61,7 +61,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         testID={`${testID}-description`}
       />
 
-      {/* 📅 Due Date Picker */}
+      {/* 📅 Due Date Picker - Molecule! */}
       <DatePicker
         label="Forfallsdato *"
         value={formData.due_date}
@@ -73,14 +73,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         testID={`${testID}-due-date`}
       />
 
-      {/* ⚡ Priority Selection */}
+      {/* ⚡ Priority Selection - Molecule! */}
       <PrioritySelector
         value={formData.priority}
-        onPriorityChange={onFieldChange('priority')}
+        onPriorityChange={onFieldChange('priority') as (priority: Priority) => void}
         testID={`${testID}-priority`}
       />
 
-      {/* 🏷️ Category Selection */}
+      {/* 🏷️ Category Selection - Molecule! */}
       <CategorySelector
         value={formData.category}
         onCategoryChange={onFieldChange('category')}
