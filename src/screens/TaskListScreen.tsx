@@ -1,4 +1,4 @@
-// /src/screens/TaskListScreen.tsx - FIKSET: Enhanced with modern loading states! 🚀
+// /src/screens/TaskListScreen.tsx - FIKSET: Enhanced with modern loading states! 
 
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
