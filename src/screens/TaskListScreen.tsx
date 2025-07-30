@@ -1,7 +1,7 @@
 // /src/screens/TaskListScreen.tsx - FIKSET: Enhanced with modern loading states! 
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 // 🎯 Modern imports - SUPER Clean!
@@ -61,16 +61,30 @@ export default function TaskListScreen({ navigation }: any) {
     navigation.navigate('TaskDetail', { taskId });
   };
 
+  // This block should now be React Native compatible (as to not crash on mobile):
   const handleTaskDelete = async (taskId: string, taskTitle: string) => {
-    if (confirm(`Er du sikker på at du vil slette "${taskTitle}"?`)) {
-      const success = await deleteTask(taskId);
-      if (success) {
-        setSelectedTaskId(null);
-      }
-    } else {
-      setSelectedTaskId(null);
-    }
-  };
+    Alert.alert(
+      'Slett oppgave', 
+      'Er du sikker på at du vil slette "${taskTitle}"?',
+      [
+        {
+          text: 'Avbryt',
+          style: 'cancel',
+          onPress: () => setSelectedTaskId(null)
+        },
+        {
+          text: 'Slett',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteTask(taskId); 
+            if (success) {
+              setSelectedTaskId(null); 
+            }
+          }
+        }
+      ]
+    )
+  }
 
   const handleRefresh = () => {
     setSelectedTaskId(null);

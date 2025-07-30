@@ -1,6 +1,6 @@
 // /src/features/tasks/hooks/useTaskFilters.ts
 import { useState, useMemo } from 'react';
-import { Task, FilterType, SortType } from '../types'; // 🔧 Fixed import path
+import { Task, FilterType, SortType } from '../types/task.types';
 
 interface UseTaskFiltersReturn {
   // Filtered results

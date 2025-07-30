@@ -1,20 +1,13 @@
-// /src/features/tasks/index.ts
-// 🎯 Hooks
+// /src/features/tasks/index.ts - Clean feature exports! 🎯
+
+// Export all hooks
 export { useTasks } from './hooks/useTasks';
 export { useTaskFilters } from './hooks/useTaskFilters';
+export { useDashboardData } from './hooks/useDashboardData';
 
-// 🏗️ Components
+// Export components
+export { TaskForm } from './components/TaskForm';
 export { default as TaskCard } from './components/TaskCard';
 
-// 📋 Types
-export type { 
-  Task, 
-  CreateTaskDto, 
-  UpdateTaskDto, 
-  TaskFilters,
-  TaskStats,
-  TaskStatus,
-  TaskPriority,
-  FilterType,
-  SortType 
-} from './types';
+// Export types
+export * from './types/task.types';
