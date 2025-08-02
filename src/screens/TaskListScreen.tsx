@@ -1,7 +1,7 @@
-// /src/screens/TaskListScreen.tsx - FIKSET: Enhanced with modern loading states! 
+// /src/screens/TaskListScreen.tsx - REAL MOBILE OPTIMIZED! 📱
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 // 🎯 Modern imports - SUPER Clean!
@@ -12,15 +12,18 @@ import TaskCard from '../features/tasks/components/TaskCard';
 import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
 import { EmptyState } from '../shared/ui/organisms/EmptyState';
 import { Header } from '../shared/ui/organisms/Header';
-import { Button, Text } from '../shared/ui'; // 🔧 FIKSET: Lagt til Text import
+import { Button, Text } from '../shared/ui';
 
 // 🌐 Context & Utils
 import { useTheme } from '../context/ThemeContext';
 import { getCategoryInfo } from '../shared/utils/categories';
 
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
 export default function TaskListScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
 
   // 🎯 POWER OF HOOKS! Business logic in 2 lines!
   const {
@@ -61,11 +64,11 @@ export default function TaskListScreen({ navigation }: any) {
     navigation.navigate('TaskDetail', { taskId });
   };
 
-  // This block should now be React Native compatible (as to not crash on mobile):
+  // ✅ React Native compatible Alert
   const handleTaskDelete = async (taskId: string, taskTitle: string) => {
     Alert.alert(
       'Slett oppgave', 
-      'Er du sikker på at du vil slette "${taskTitle}"?',
+      `Er du sikker på at du vil slette "${taskTitle}"?`,
       [
         {
           text: 'Avbryt',
@@ -83,8 +86,8 @@ export default function TaskListScreen({ navigation }: any) {
           }
         }
       ]
-    )
-  }
+    );
+  };
 
   const handleRefresh = () => {
     setSelectedTaskId(null);
@@ -157,122 +160,226 @@ export default function TaskListScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header - Clean organism! */}
-      <Header 
-        title="Mine oppgaver"
-        subtitle={`${tasks.length} oppgaver totalt`}
+      {/* ✅ PROPER STATUS BAR - Critical for real mobile */}
+      <StatusBar 
+        barStyle={theme.textPrimary === '#333333' ? 'dark-content' : 'light-content'}
+        backgroundColor={theme.background}
+        translucent={false}
       />
-
-      {/* 📊 Dashboard Navigation */}
-      <Button
-        variant="info"
-        size="medium"
-        fullWidth
-        icon="📊"
-        onPress={() => navigation.navigate('Dashboard')}
-        style={styles.dashboardButton}
-      >
-        Dashboard
-      </Button>
-
-      {/* 🎛️ Complete Filter Panel - One organism! */}
-      <TaskFilterPanel
-        searchText={searchText}
-        onSearchChange={setSearchText}
-        onSearchClear={() => setSearchText('')}
-        activeFilter={filter}
-        onFilterChange={setFilter}
-        filterCounts={taskCounts}
-        categoryFilter={categoryFilter}
-        onCategoryChange={setCategoryFilter}
-        categoryCounts={getCategoryCounts()}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        hasActiveFilters={filterStats.hasActiveFilters}
-        onClearAll={clearFilters}
-      />
-
-      {/* 📋 Content with Enhanced Loading States */}
-      {loading ? (
-        // 🔄 FIKSET: Proper loading state with styling
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.info} />
-          <Text variant="body1" color="secondary" style={styles.loadingText}>
-            Laster oppgaver...
-          </Text>
+      
+      {/* 📱 ULTRA-COMPACT HEADER - Minimal space usage */}
+      <View style={[styles.headerContainer, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.titleSection}>
+            <Text variant="h4" color="primary" style={styles.title}>
+              Mine oppgaver ({tasks.length})
+            </Text>
+          </View>
+          
+          <Button
+            variant="info"
+            size="small"
+            onPress={() => navigation.navigate('Dashboard')}
+            style={styles.dashboardButton}
+          >
+            📊
+          </Button>
         </View>
-      ) : filteredTasks.length === 0 ? (
-        <EmptyState {...getEmptyStateProps()} />
-      ) : (
-        <FlatList
-          data={filteredTasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TaskCard
-              task={item}
-              isSelected={selectedTaskId === item.id}
-              onPress={() => handleTaskPress(item.id)}
-              onEdit={() => handleTaskEdit(item.id)}
-              onDelete={() => handleTaskDelete(item.id, item.title)}
-            />
-          )}
-          style={styles.list}
-          refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={handleRefresh} 
-              colors={[theme.info]} 
-              tintColor={theme.info} 
-            />
-          }
-          onScrollBeginDrag={() => setSelectedTaskId(null)}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-          showsVerticalScrollIndicator={false}
-        />
+      </View>
+
+      {/* 🎛️ COLLAPSIBLE FILTERS - Save vertical space */}
+      <View style={[styles.filtersHeader, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+        <Button
+          variant="secondary"
+          size="small"
+          onPress={() => setFiltersCollapsed(!filtersCollapsed)}
+          style={styles.toggleFiltersButton}
+        >
+          {filtersCollapsed ? '🔽 Vis filtre' : '🔼 Skjul filtre'} ({filteredTasks.length} av {tasks.length})
+        </Button>
+      </View>
+
+      {!filtersCollapsed && (
+        <View style={[styles.filtersContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+          <TaskFilterPanel
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            onSearchClear={() => setSearchText('')}
+            activeFilter={filter}
+            onFilterChange={setFilter}
+            filterCounts={taskCounts}
+            categoryFilter={categoryFilter}
+            onCategoryChange={setCategoryFilter}
+            categoryCounts={getCategoryCounts()}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            hasActiveFilters={filterStats.hasActiveFilters}
+            onClearAll={clearFilters}
+          />
+        </View>
       )}
 
-      {/* ➕ Create Button */}
-      <Button
-        variant="primary"
-        size="large"
-        fullWidth
-        icon="+"
-        onPress={() => navigation.navigate('CreateTask')}
-        style={styles.createButton}
-      >
-        Opprett ny oppgave
-      </Button>
+      {/* 📋 MAIN TASK LIST - Maximum available space */}
+      <View style={styles.listContainer}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text variant="body1" color="secondary" style={styles.loadingText}>
+              Laster oppgaver...
+            </Text>
+          </View>
+        ) : filteredTasks.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <EmptyState {...getEmptyStateProps()} />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredTasks}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TaskCard
+                task={item}
+                isSelected={selectedTaskId === item.id}
+                onPress={() => handleTaskPress(item.id)}
+                onEdit={() => handleTaskEdit(item.id)}
+                onDelete={() => handleTaskDelete(item.id, item.title)}
+              />
+            )}
+            style={styles.flatList}
+            contentContainerStyle={styles.flatListContent}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={handleRefresh} 
+                colors={['#007AFF']} 
+                tintColor="#007AFF" 
+              />
+            }
+            onScrollBeginDrag={() => setSelectedTaskId(null)}
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            showsVerticalScrollIndicator={true}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            getItemLayout={(data, index) => ({
+              length: 120, // Approximate TaskCard height
+              offset: 128 * index, // 120 + 8 separator
+              index,
+            })}
+          />
+        )}
+      </View>
+
+      {/* ➕ HUAWEI-SAFE CREATE BUTTON - Well above virtual navbar */}
+      <View style={[styles.createButtonContainer, { backgroundColor: theme.background }]}>
+        <Button
+          variant="primary"
+          size="large"
+          fullWidth
+          onPress={() => navigation.navigate('CreateTask')}
+          style={styles.createButton}
+        >
+          ➕ Opprett ny oppgave
+        </Button>
+        
+        {/* 📱 EXTRA SAFE AREA for Huawei virtual buttons */}
+        <View style={styles.huaweiSafeArea} />
+      </View>
     </View>
   );
 }
 
-// 🎨 MUCH CLEANER STYLES! 
+// 🎨 REAL MOBILE OPTIMIZED STYLES
 const styles = StyleSheet.create({
   container: { 
-    flex: 1, 
-    padding: 20,
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
-  dashboardButton: { 
-    marginBottom: 20,
+  
+  // ULTRA-COMPACT HEADER
+  headerContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
   },
-  list: { 
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  titleSection: {
     flex: 1,
   },
-  createButton: { 
-    marginTop: 16,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
   },
-  // 🔧 FIKSET: Lagt til manglende loading styles
+  dashboardButton: { 
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  
+  // COLLAPSIBLE FILTERS
+  filtersHeader: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  toggleFiltersButton: {
+    alignSelf: 'flex-start',
+  },
+  filtersContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    maxHeight: SCREEN_HEIGHT * 0.4, // Max 40% of screen
+  },
+  
+  // MAIN LIST - Takes ALL remaining space
+  listContainer: {
+    flex: 1, // Critical: Takes all available space
+    backgroundColor: 'transparent',
+  },
+  flatList: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  flatListContent: {
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  
+  // LOADING/EMPTY
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 50,
   },
   loadingText: {
     marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  
+  // HUAWEI-SAFE BUTTON
+  createButtonContainer: {
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  createButton: {
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  huaweiSafeArea: {
+    height: Platform.OS === 'android' ? 15 : 0, // Extra space for Huawei virtual navbar
   },
 });
