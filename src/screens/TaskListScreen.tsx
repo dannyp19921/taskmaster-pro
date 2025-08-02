@@ -1,7 +1,7 @@
-// /src/screens/TaskListScreen.tsx - REAL MOBILE OPTIMIZED! 📱
+// /src/screens/TaskListScreen.tsx - MODERN 2025 UI/UX! 📱
 
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Modal, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 // 🎯 Modern imports - SUPER Clean!
@@ -18,12 +18,12 @@ import { Button, Text } from '../shared/ui';
 import { useTheme } from '../context/ThemeContext';
 import { getCategoryInfo } from '../shared/utils/categories';
 
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function TaskListScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // 🎯 POWER OF HOOKS! Business logic in 2 lines!
   const {
@@ -158,21 +158,48 @@ export default function TaskListScreen({ navigation }: any) {
     };
   };
 
+  // 🎯 Get active filter summary for display
+  const getFilterSummary = () => {
+    const parts = [];
+    
+    if (filter !== 'all') {
+      parts.push(filter === 'active' ? 'Aktive' : 'Fullført');
+    }
+    
+    if (categoryFilter !== 'all') {
+      const categoryInfo = getCategoryInfo(categoryFilter);
+      parts.push(categoryInfo.label);
+    }
+    
+    if (searchText.trim()) {
+      parts.push(`"${searchText}"`);
+    }
+    
+    if (sortBy !== 'date') {
+      parts.push(sortBy === 'priority' ? 'Etter prioritet' : 'Usortert');
+    }
+    
+    return parts.length > 0 ? parts.join(' • ') : 'Alle oppgaver';
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* ✅ PROPER STATUS BAR - Critical for real mobile */}
+      {/* ✅ PROPER STATUS BAR */}
       <StatusBar 
         barStyle={theme.textPrimary === '#333333' ? 'dark-content' : 'light-content'}
         backgroundColor={theme.background}
         translucent={false}
       />
       
-      {/* 📱 ULTRA-COMPACT HEADER - Minimal space usage */}
+      {/* 📱 MINIMAL HEADER - Clean & Simple */}
       <View style={[styles.headerContainer, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
         <View style={styles.headerRow}>
           <View style={styles.titleSection}>
             <Text variant="h4" color="primary" style={styles.title}>
-              Mine oppgaver ({tasks.length})
+              Mine oppgaver
+            </Text>
+            <Text variant="caption" color="secondary" style={styles.subtitle}>
+              {filteredTasks.length} av {tasks.length} oppgaver
             </Text>
           </View>
           
@@ -182,44 +209,43 @@ export default function TaskListScreen({ navigation }: any) {
             onPress={() => navigation.navigate('Dashboard')}
             style={styles.dashboardButton}
           >
-            📊
+            📊 Dashboard
           </Button>
         </View>
       </View>
 
-      {/* 🎛️ COLLAPSIBLE FILTERS - Save vertical space */}
-      <View style={[styles.filtersHeader, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+      {/* 🎛️ MODERN FILTER BAR - Minimal & Clean */}
+      <View style={[styles.filterBar, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
         <Button
-          variant="secondary"
-          size="small"
-          onPress={() => setFiltersCollapsed(!filtersCollapsed)}
-          style={styles.toggleFiltersButton}
+          variant={filterStats.hasActiveFilters ? 'primary' : 'secondary'}
+          size="medium"
+          onPress={() => setFilterModalVisible(true)}
+          style={styles.filterButton}
         >
-          {filtersCollapsed ? '🔽 Vis filtre' : '🔼 Skjul filtre'} ({filteredTasks.length} av {tasks.length})
+          🎛️ Filtre{filterStats.hasActiveFilters ? ' (aktive)' : ''}
         </Button>
+        
+        {/* Active filter summary */}
+        <View style={styles.filterSummary}>
+          <Text variant="caption" color="secondary" numberOfLines={1}>
+            {getFilterSummary()}
+          </Text>
+        </View>
+        
+        {/* Clear filters button */}
+        {filterStats.hasActiveFilters && (
+          <Button
+            variant="secondary"
+            size="small"
+            onPress={clearFilters}
+            style={styles.clearButton}
+          >
+            ✕ Tøm
+          </Button>
+        )}
       </View>
 
-      {!filtersCollapsed && (
-        <View style={[styles.filtersContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
-          <TaskFilterPanel
-            searchText={searchText}
-            onSearchChange={setSearchText}
-            onSearchClear={() => setSearchText('')}
-            activeFilter={filter}
-            onFilterChange={setFilter}
-            filterCounts={taskCounts}
-            categoryFilter={categoryFilter}
-            onCategoryChange={setCategoryFilter}
-            categoryCounts={getCategoryCounts()}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            hasActiveFilters={filterStats.hasActiveFilters}
-            onClearAll={clearFilters}
-          />
-        </View>
-      )}
-
-      {/* 📋 MAIN TASK LIST - Maximum available space */}
+      {/* 📋 MAIN TASK LIST - FULL SCREEN REAL ESTATE */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -256,21 +282,16 @@ export default function TaskListScreen({ navigation }: any) {
               />
             }
             onScrollBeginDrag={() => setSelectedTaskId(null)}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
             showsVerticalScrollIndicator={true}
             removeClippedSubviews={true}
             maxToRenderPerBatch={8}
             windowSize={5}
-            getItemLayout={(data, index) => ({
-              length: 120, // Approximate TaskCard height
-              offset: 128 * index, // 120 + 8 separator
-              index,
-            })}
           />
         )}
       </View>
 
-      {/* ➕ HUAWEI-SAFE CREATE BUTTON - Well above virtual navbar */}
+      {/* ➕ SIMPLE CREATE BUTTON */}
       <View style={[styles.createButtonContainer, { backgroundColor: theme.background }]}>
         <Button
           variant="primary"
@@ -281,25 +302,86 @@ export default function TaskListScreen({ navigation }: any) {
         >
           ➕ Opprett ny oppgave
         </Button>
-        
-        {/* 📱 EXTRA SAFE AREA for Huawei virtual buttons */}
-        <View style={styles.huaweiSafeArea} />
       </View>
+
+      {/* 🎛️ FULLSCREEN FILTER MODAL - Modern Pattern */}
+      <Modal
+        visible={filterModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          {/* Modal Header */}
+          <View style={[styles.modalHeader, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+            <Text variant="h4" color="primary" style={styles.modalTitle}>
+              🎛️ Filtrer oppgaver
+            </Text>
+            <Button
+              variant="secondary"
+              size="medium"
+              onPress={() => setFilterModalVisible(false)}
+              style={styles.closeButton}
+            >
+              ✕ Lukk
+            </Button>
+          </View>
+
+          {/* Filter Content - Full Space */}
+          <View style={styles.modalContent}>
+            <TaskFilterPanel
+              searchText={searchText}
+              onSearchChange={setSearchText}
+              onSearchClear={() => setSearchText('')}
+              activeFilter={filter}
+              onFilterChange={setFilter}
+              filterCounts={taskCounts}
+              categoryFilter={categoryFilter}
+              onCategoryChange={setCategoryFilter}
+              categoryCounts={getCategoryCounts()}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              hasActiveFilters={filterStats.hasActiveFilters}
+              onClearAll={clearFilters}
+            />
+          </View>
+
+          {/* Modal Actions */}
+          <View style={[styles.modalActions, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+            <Button
+              variant="secondary"
+              size="large"
+              onPress={clearFilters}
+              style={styles.clearAllButton}
+            >
+              🗑️ Tøm alle filtre
+            </Button>
+            <Button
+              variant="primary"
+              size="large"
+              onPress={() => setFilterModalVisible(false)}
+              style={styles.applyButton}
+            >
+              ✅ Bruk filtre ({filteredTasks.length})
+            </Button>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-// 🎨 REAL MOBILE OPTIMIZED STYLES
+// 🎨 MODERN 2025 UI STYLES
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
   
-  // ULTRA-COMPACT HEADER
+  // MINIMAL HEADER
   headerContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   headerRow: {
@@ -311,42 +393,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
   },
+  subtitle: {
+    marginTop: 2,
+  },
   dashboardButton: { 
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  
-  // COLLAPSIBLE FILTERS
-  filtersHeader: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-  toggleFiltersButton: {
-    alignSelf: 'flex-start',
-  },
-  filtersContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    maxHeight: SCREEN_HEIGHT * 0.4, // Max 40% of screen
   },
   
-  // MAIN LIST - Takes ALL remaining space
+  // MODERN FILTER BAR
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+  },
+  filterSummary: {
+    flex: 1,
+  },
+  clearButton: {
+    paddingHorizontal: 12,
+  },
+  
+  // FULL SCREEN LIST
   listContainer: {
-    flex: 1, // Critical: Takes all available space
-    backgroundColor: 'transparent',
+    flex: 1, // Takes ALL remaining space
   },
   flatList: {
     flex: 1,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
   },
   flatListContent: {
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   
   // LOADING/EMPTY
@@ -354,7 +441,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
   },
   loadingText: {
     marginTop: 16,
@@ -364,13 +450,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   
-  // HUAWEI-SAFE BUTTON
+  // SIMPLE BUTTON
   createButtonContainer: {
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: Platform.OS === 'android' ? 20 : 16,
   },
   createButton: {
     elevation: 4,
@@ -379,7 +463,42 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  huaweiSafeArea: {
-    height: Platform.OS === 'android' ? 15 : 0, // Extra space for Huawei virtual navbar
+
+  // FULLSCREEN FILTER MODAL
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  closeButton: {
+    paddingHorizontal: 16,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  clearAllButton: {
+    flex: 1,
+  },
+  applyButton: {
+    flex: 2,
   },
 });
