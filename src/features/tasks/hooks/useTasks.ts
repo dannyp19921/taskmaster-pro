@@ -1,6 +1,6 @@
 // /src/features/tasks/hooks/useTasks.ts - KONSOLIDERT: Alle task operasjoner i én hook! 🚀
 import { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { supabase } from '../../../services/supabase';
 import { Task, CreateTaskDto, UpdateTaskDto } from '../types/task.types';
 
@@ -42,6 +42,10 @@ export const useTasks = (): UseTasksReturn => {
   // 📥 Fetch tasks from database
   const fetchTasks = useCallback(async (isRefreshing = false) => {
     try {
+      // 🔍 DEBUG: Legg console.log HER, øverst i try-blokken
+      console.log('🔍 MOBILE DEBUG: Fetching tasks...');
+      console.log('🔍 Platform:', Platform.OS);
+      
       if (isRefreshing) {
         setRefreshing(true);
       } else {
@@ -50,7 +54,12 @@ export const useTasks = (): UseTasksReturn => {
       
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      // 🔍 DEBUG: Legg console.log HER, rett etter getUser()
+      console.log('🔍 User on mobile:', user?.email || 'NOT LOGGED IN');
+      console.log('🔍 User error:', userError?.message || 'none');
+      
       if (!user) {
         throw new Error('Bruker ikke logget inn');
       }
@@ -61,12 +70,19 @@ export const useTasks = (): UseTasksReturn => {
         .eq('user_id', user.id)
         .order('due_date', { ascending: true });
 
+      // 🔍 DEBUG: Legg console.log HER, etter database query
+      console.log('🔍 Fetched tasks count:', data?.length || 0);
+      console.log('🔍 Fetch error:', fetchError?.message || 'none');
+
       if (fetchError) {
         throw new Error(fetchError.message);
       }
 
       setTasks(data || []);
     } catch (err: any) {
+      // 🔍 DEBUG: Legg console.log HER, i catch blokken
+      console.log('🔍 ERROR caught:', err.message);
+      
       const errorMessage = err.message || 'Kunne ikke hente oppgaver';
       setError(errorMessage);
       
