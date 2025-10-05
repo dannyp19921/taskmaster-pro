@@ -1,8 +1,8 @@
 // /src/shared/ui/organisms/EmptyState.tsx - Fixed styling! 🌕
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Button } from '../atoms/Button';
-import { Text } from '../atoms/Text';
+import { Button } from './Button';
+import { Text } from './Text';
 
 interface EmptyStateProps {
   icon?: string;

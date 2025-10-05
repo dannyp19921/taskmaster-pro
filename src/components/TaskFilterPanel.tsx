@@ -1,12 +1,11 @@
-// /src/shared/ui/organisms/TaskFilterPanel.tsx - Complete filter system! 🎛️
+// /src/shared/ui/organisms/TaskFilterPanel.tsx - Complete filter system!
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { Button } from '../atoms/Button';
-import { Text } from '../atoms/Text';
-import SearchBox from '../molecules/SearchBox';
-import FilterButtons from '../molecules/FilterButtons';
-import { useTheme } from '../../../context/ThemeContext';
-import { CATEGORY_OPTIONS } from '../../../shared/utils/categories';
+import { Button } from './Button';
+import { Text } from './Text';
+import FilterButtons from './FilterButtons';
+import { useTheme } from '../context/ThemeContext';
+import { CATEGORY_OPTIONS } from '../shared/utils/categories';
 
 // Types for the panel
 interface FilterCounts {
@@ -98,14 +97,6 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* 🔍 Search */}
-      <SearchBox 
-        value={searchText}
-        onChangeText={onSearchChange}
-        placeholder="🔍 Søk etter oppgaver..."
-        onClear={onSearchClear}
-      />
-
       {/* 🎛️ Status Filters */}
       <FilterButtons
         activeFilter={activeFilter}

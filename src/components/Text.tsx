@@ -1,7 +1,7 @@
 // /src/shared/ui/atoms/Text.tsx - Simplified version
 import React from 'react';
 import { Text as RNText, TextStyle } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 export type TextVariant = 
   | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'

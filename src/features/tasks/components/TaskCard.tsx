@@ -3,10 +3,10 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 
-import { Text } from '../../../shared/ui/atoms/Text';
-import { TaskStatus } from '../../../shared/ui/molecules/TaskStatus';
-import { TaskActions } from '../../../shared/ui/molecules/TaskActions';
-import { CategoryBadge } from '../../../shared/ui/molecules/CategoryBadge';
+import { Text } from '../../../components/Text';
+import { TaskStatus } from '../../../components/TaskStatus';
+import { TaskActions } from '../../../components/TaskActions';
+import { CategoryBadge } from '../../../components/CategoryBadge';
 
 interface Task {
   id: string;

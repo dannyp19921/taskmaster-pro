@@ -1,11 +1,15 @@
-// /src/features/tasks/components/TaskForm.tsx - PERFEKT med molecules! 🧬
-
+// /src/features/tasks/components/TaskForm.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Input, Text, Button } from '../../../shared/ui';
-import { DatePicker } from '../../../shared/ui/molecules/DatePicker';
-import { PrioritySelector, Priority } from '../../../shared/ui/molecules/PrioritySelector';
-import { CategorySelector } from '../../../shared/ui/molecules/CategorySelector';
+
+import { Input } from '../../../components/Input';
+import { Button } from '../../../components/Button';
+import { Text } from '../../../components/Text';
+
+
+import { DatePicker } from '../../../components/DatePicker';
+import { PrioritySelector, Priority } from '../../../components/PrioritySelector';
+import { CategorySelector } from '../../../components/CategorySelector';
 import { useTheme } from '../../../context/ThemeContext';
 import { CATEGORY_OPTIONS } from '../../../shared/utils/categories';
 

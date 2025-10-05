@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../atoms/Text';
-import { getCategoryInfo } from '../../../shared/utils/categories';
+import { Text } from './Text';
+import { getCategoryInfo } from '../shared/utils/categories';
 
 interface CategoryBadgeProps {
   category?: string;

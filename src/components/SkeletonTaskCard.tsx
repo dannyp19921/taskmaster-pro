@@ -1,8 +1,8 @@
-// /src/shared/ui/atoms/SkeletonTaskCard.tsx - Modern loading skeleton! ⏳
+// /src/shared/ui/atoms/SkeletonTaskCard.tsx - Modern loading skeleton! 
 
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface SkeletonTaskCardProps {
   testID?: string;

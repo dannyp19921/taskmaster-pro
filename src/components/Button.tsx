@@ -1,7 +1,7 @@
 // /src/shared/ui/atoms/Button.tsx - Simplified version
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'info';
 export type ButtonSize = 'small' | 'medium' | 'large';

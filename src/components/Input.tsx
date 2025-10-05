@@ -1,7 +1,7 @@
 // /src/shared/ui/atoms/Input.tsx - Complete with error and textarea support
 import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 export type InputVariant = 'default' | 'search' | 'textarea';
 export type InputSize = 'small' | 'medium' | 'large';

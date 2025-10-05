@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ThemeToggle() {
   const { theme, isDarkMode, toggleTheme } = useTheme();

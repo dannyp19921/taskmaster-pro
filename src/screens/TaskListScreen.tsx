@@ -7,10 +7,11 @@ import { supabase } from '../services/supabase';
 import { useTasks, useTaskFilters } from '../features/tasks';
 import TaskCard from '../features/tasks/components/TaskCard';
 
-import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
-import { EmptyState } from '../shared/ui/organisms/EmptyState';
-import { Header } from '../shared/ui/organisms/Header';
-import { Button, Text } from '../shared/ui';
+import { TaskFilterPanel } from '../components/TaskFilterPanel';
+import { EmptyState } from '../components/EmptyState';
+import SearchBox from '../components/SearchBox';
+import { Button } from '../components/Button';
+import { Text } from '../components/Text';
 
 import { useTheme } from '../context/ThemeContext';
 import { getCategoryInfo } from '../shared/utils/categories';
@@ -213,7 +214,17 @@ export default function TaskListScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Filter and Search Bar */}
       <View style={[styles.filterBar, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+        <View style={styles.searchContainer}>
+          <SearchBox
+            value={searchText}
+            onChangeText={setSearchText}
+            onClear={() => setSearchText('')}
+            placeholder="Søk i oppgaver..."
+          />
+        </View>
+        
         <Button
           variant={filterStats.hasActiveFilters ? 'primary' : 'secondary'}
           size="medium"
@@ -222,12 +233,6 @@ export default function TaskListScreen({ navigation }: any) {
         >
           Filtre{filterStats.hasActiveFilters ? ' (aktive)' : ''}
         </Button>
-        
-        <View style={styles.filterSummary}>
-          <Text variant="caption" color="secondary" numberOfLines={1}>
-            {getFilterSummary()}
-          </Text>
-        </View>
         
         {filterStats.hasActiveFilters && (
           <Button
@@ -396,13 +401,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: 8,
+  },
+  searchContainer: {
+    flex: 1,
   },
   filterButton: {
-    paddingHorizontal: 16,
-  },
-  filterSummary: {
-    flex: 1,
+    paddingHorizontal: 12,
   },
   clearButton: {
     paddingHorizontal: 12,

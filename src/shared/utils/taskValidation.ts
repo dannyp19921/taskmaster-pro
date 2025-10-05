@@ -1,4 +1,4 @@
-// /src/shared/utils/taskValidation.ts - Felles validering for alle task forms! ✅
+// /src/shared/utils/taskValidation.ts - Shared validation for task forms
 
 import { TaskFormData } from '../../features/tasks/components/TaskForm';
 

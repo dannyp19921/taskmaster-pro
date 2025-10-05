@@ -1,9 +1,9 @@
 // /src/shared/ui/molecules/Calendar.tsx - Universal calendar component! 📅
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { Text } from '../atoms/Text';
-import { Button } from '../atoms/Button';
-import { useTheme } from '../../../context/ThemeContext';
+import { Text } from './Text';
+import { Button } from './Button';
+import { useTheme } from '../context/ThemeContext';
 
 interface CalendarProps {
   visible: boolean;

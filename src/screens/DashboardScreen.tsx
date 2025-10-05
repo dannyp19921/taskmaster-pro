@@ -4,14 +4,15 @@ import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 
 
 import { useDashboardData } from '../features/tasks/hooks/useDashboardData';
 
-import { Button, Text } from '../shared/ui';
-import { Header } from '../shared/ui/organisms/Header';
+import { Button } from '../components/Button';
+import { Text } from '../components/Text';
+import { Header } from '../components/Header';
 import { 
   StatCard, 
   ProgressBar, 
   CategoryList, 
   PriorityOverview 
-} from '../shared/ui/organisms/DashboardComponents';
+} from '../components/DashboardComponents';
 
 import { useTheme } from '../context/ThemeContext';
 

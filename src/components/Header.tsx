@@ -1,8 +1,8 @@
 // /src/shared/ui/organisms/Header.tsx - Reusable app header! 📱
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../atoms/Text';
-import ThemeToggle from '../molecules/ThemeToggle';
+import { Text } from './Text';
+import ThemeToggle from './ThemeToggle';
 
 interface HeaderProps {
   title: string;

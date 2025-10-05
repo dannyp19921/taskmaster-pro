@@ -7,8 +7,8 @@ import { CreateTaskDto } from '../features/tasks/types/task.types';
 
 import { validateTaskForm } from '../shared/utils/taskValidation';
 
-import { Button } from '../shared/ui';
-import { Header } from '../shared/ui/organisms/Header';
+import { Button } from '../components/Button';
+import { Header } from '../components/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
 
 import { useTheme } from '../context/ThemeContext';

@@ -1,9 +1,9 @@
 // /src/shared/ui/molecules/DatePicker.tsx - Modern date picker med custom calendar! 📅
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Text } from '../atoms/Text';
+import { Text } from './Text';
 import { Calendar } from './Calendar';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface DatePickerProps {
   label?: string;

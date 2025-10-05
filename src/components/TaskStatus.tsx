@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../atoms/Text';
-import { useTheme } from '../../../context/ThemeContext';
+import { Text } from './Text';
+import { useTheme } from '../context/ThemeContext';
 
 interface TaskStatusProps {
   dueDate: string;

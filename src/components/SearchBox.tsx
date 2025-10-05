@@ -1,9 +1,9 @@
 // /src/shared/ui/molecules/SearchBox.tsx - Perfect atomic design! 🎨
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Input } from '../atoms/Input';
-import { Text } from '../atoms/Text';
-import { useTheme } from '../../../context/ThemeContext';
+import { Input } from './Input';
+import { Text } from './Text';
+import { useTheme } from '../context/ThemeContext';
 
 interface SearchBoxProps {
   value: string;

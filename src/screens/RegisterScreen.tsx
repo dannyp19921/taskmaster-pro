@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../services/supabase';
 
-import { Button, Input, Text } from '../shared/ui';
-import { Header } from '../shared/ui/organisms/Header';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { Text } from '../components/Text';
+import { Header } from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
 
 interface RegisterScreenProps {
