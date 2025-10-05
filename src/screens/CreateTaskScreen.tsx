@@ -1,28 +1,22 @@
-// /src/screens/CreateTaskScreen.tsx - 100% PERFEKT! 🎯
-
+// /src/screens/CreateTaskScreen.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 
-// 🎯 Business logic
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { CreateTaskDto } from '../features/tasks/types/task.types';
 
-// 🧪 Validation utilities - Felles for alle screens!
 import { validateTaskForm } from '../shared/utils/taskValidation';
 
-// 🎨 UI components - Perfect atomic design!
 import { Button } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
 
-// 🌐 Context
 import { useTheme } from '../context/ThemeContext';
 
 export default function CreateTaskScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { createTask, creating } = useTasks();
 
-  // 🎨 Form state - Clean and standardized
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -33,17 +27,14 @@ export default function CreateTaskScreen({ navigation }: any) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 🎯 Form handler - Consistent across all forms
   const updateField = (field: keyof TaskFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  // 🧪 Validation using shared utility - DRY principle!
   const handleSubmit = async () => {
     const validation = validateTaskForm(formData);
     
@@ -64,7 +55,7 @@ export default function CreateTaskScreen({ navigation }: any) {
     const createdTask = await createTask(taskData);
     
     if (createdTask) {
-      navigation.goBack();
+      navigation.navigate('TaskList');
     }
   };
 
@@ -87,21 +78,10 @@ export default function CreateTaskScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header - Consistent across all screens */}
       <Header 
         title="Ny oppgave"
         subtitle="Opprett en ny oppgave"
         showThemeToggle={false}
-        rightComponent={
-          <Button
-            variant="secondary"
-            size="small"
-            onPress={handleCancel}
-            testID="cancel-button"
-          >
-            Avbryt
-          </Button>
-        }
       />
 
       <ScrollView 
@@ -109,7 +89,6 @@ export default function CreateTaskScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 📝 TaskForm - Perfect reusable atomic component with molecules */}
         <TaskForm
           formData={formData}
           onFieldChange={updateField}
@@ -118,7 +97,6 @@ export default function CreateTaskScreen({ navigation }: any) {
         />
       </ScrollView>
 
-      {/* 🚀 Action Buttons - Consistent styling and behavior */}
       <View style={styles.actionButtons}>
         <Button
           variant="secondary"
@@ -138,14 +116,13 @@ export default function CreateTaskScreen({ navigation }: any) {
           style={styles.submitButton}
           testID="submit-button"
         >
-          {creating ? 'Oppretter...' : '✅ Opprett oppgave'}
+          {creating ? 'Oppretter...' : 'Opprett oppgave'}
         </Button>
       </View>
     </View>
   );
 }
 
-// 🎨 Styles - Clean and focused
 const styles = StyleSheet.create({
   container: {
     flex: 1,

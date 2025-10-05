@@ -1,38 +1,21 @@
-// /src/screens/TaskDetailScreen.tsx - 100% PERFEKT! 🎯
-
+// /src/screens/TaskDetailScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 
-// 🎯 Business logic
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { Task } from '../features/tasks/types/task.types';
-
-// 🧪 Validation utilities - Shared with CreateTaskScreen!
 import { validateTaskForm } from '../shared/utils/taskValidation';
 
-// 🎨 UI components - Perfect atomic design!
 import { Button, Text } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
-
-// 🌐 Context
 import { useTheme } from '../context/ThemeContext';
 
-interface TaskDetailScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      taskId: string;
-    };
-  };
-}
-
-export default function TaskDetailScreen({ navigation, route }: TaskDetailScreenProps) {
+export default function TaskDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { taskId } = route.params;
-  const { tasks, updateTask, deleteTask, loading: tasksLoading } = useTasks();
+  const { tasks, updateTask, deleteTask } = useTasks();
 
-  // 🎯 State management - Clean and consistent
   const [task, setTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -46,150 +29,119 @@ export default function TaskDetailScreen({ navigation, route }: TaskDetailScreen
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 🎯 Form handler - Identical to CreateTaskScreen (DRY principle)
+  useEffect(() => {
+    const foundTask = tasks.find(t => t.id === taskId);
+    if (foundTask) {
+      setTask(foundTask);
+      setFormData({
+        title: foundTask.title,
+        description: foundTask.description || '',
+        due_date: foundTask.due_date,
+        priority: foundTask.priority,
+        category: foundTask.category || 'Personlig',
+      });
+      setCompleted(foundTask.status === 'completed');
+    }
+  }, [tasks, taskId]);
+
   const updateField = (field: keyof TaskFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  // 📡 Load task data from existing state - Optimized
-  useEffect(() => {
-    if (tasks.length > 0) {
-      const foundTask = tasks.find(t => t.id === taskId);
-      
-      if (foundTask) {
-        console.log('✅ Task loaded from state:', foundTask.title);
-        setTask(foundTask);
-        setFormData({
-          title: foundTask.title,
-          description: foundTask.description || '',
-          due_date: foundTask.due_date,
-          priority: foundTask.priority,
-          category: foundTask.category || 'Personlig',
-        });
-        setCompleted(foundTask.status === 'completed');
-      } else {
-        console.log('❌ Task not found in state');
-        Alert.alert('Feil', 'Oppgaven ble ikke funnet');
-        navigation.goBack();
-      }
-    }
-  }, [tasks, taskId, navigation]);
+  const goBackToList = () => {
+    navigation.navigate('TaskList');
+  };
 
-  // 💾 Save handler with shared validation
   const handleSaveTask = async () => {
     const validation = validateTaskForm(formData);
     
     if (!validation.isValid) {
       setErrors(validation.errors);
-      Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
+      const errorMsg = Object.entries(validation.errors)
+        .map(([key, val]) => `${key}: ${val}`)
+        .join('\n');
+      
+      if (Platform.OS === 'web') {
+        alert(`Valideringsfeil:\n${errorMsg}`);
+      } else {
+        Alert.alert('Valideringsfeil', errorMsg);
+      }
       return;
     }
 
-    try {
-      setSaving(true);
-      console.log('💾 Saving task changes:', taskId);
+    setSaving(true);
+    
+    const updateData = {
+      title: formData.title.trim(),
+      description: formData.description.trim() || undefined,
+      due_date: formData.due_date,
+      priority: formData.priority,
+      category: formData.category,
+      status: (completed ? 'completed' : 'open') as 'completed' | 'open',
+    };
+    
+    const success = await updateTask(taskId, updateData);
 
-      const success = await updateTask(taskId, {
-        title: formData.title.trim(),
-        description: formData.description.trim() || undefined,
-        due_date: formData.due_date,
-        priority: formData.priority,
-        category: formData.category,
-        status: completed ? 'completed' : 'open',
-      });
+    setSaving(false);
 
-      if (success) {
-        console.log('✅ Task saved successfully');
-        Alert.alert('Suksess', 'Endringer lagret!');
-        navigation.goBack();
+    if (success) {
+      if (Platform.OS === 'web') {
+        alert('Oppgaven ble lagret!');
+        goBackToList();
+      } else {
+        Alert.alert('Suksess', 'Oppgaven ble lagret!', [
+          { text: 'OK', onPress: () => goBackToList() }
+        ]);
       }
-    } finally {
-      setSaving(false);
+    } else {
+      if (Platform.OS === 'web') {
+        alert('Kunne ikke lagre endringer.');
+      } else {
+        Alert.alert('Feil', 'Kunne ikke lagre endringer.');
+      }
     }
   };
 
-  // 🗑️ Delete handler with confirmation
   const handleDeleteTask = async () => {
-    Alert.alert(
-      'Slett oppgave',
-      `Er du sikker på at du vil slette "${task?.title}"?`,
-      [
-        { text: 'Avbryt', style: 'cancel' },
-        { 
-          text: 'Slett', 
-          style: 'destructive', 
-          onPress: async () => {
-            const success = await deleteTask(taskId);
-            
-            if (success) {
-              console.log('✅ Task deleted successfully');
-              Alert.alert('Suksess', 'Oppgave slettet!');
-              navigation.goBack();
-            }
-          }
-        }
-      ]
-    );
+    // Use window.confirm for web, Alert for native
+    const confirmDelete = Platform.OS === 'web'
+      ? window.confirm(`Vil du slette "${task?.title}"?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'Slett oppgave',
+            `Vil du slette "${task?.title}"?`,
+            [
+              { text: 'Avbryt', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Slett', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        });
+
+    if (confirmDelete) {
+      const success = await deleteTask(taskId);
+      if (success) {
+        goBackToList();
+      }
+    }
   };
 
-  // 🔄 Loading state - Consistent with other screens
-  if (tasksLoading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.info} />
-        <Text variant="body1" color="secondary" style={styles.loadingText}>
-          Laster oppgave...
-        </Text>
-      </View>
-    );
-  }
-
-  // ❌ Error state - Better error handling
   if (!task) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-        <Text variant="h2" color="primary" style={styles.errorTitle}>
-          Oppgaven ble ikke funnet
-        </Text>
-        <Text variant="body1" color="secondary" style={styles.errorSubtitle}>
-          Oppgaven eksisterer ikke eller du har ikke tilgang til den.
-        </Text>
-        <Button
-          variant="primary"
-          size="large"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          testID="back-button"
-        >
-          Gå tilbake
-        </Button>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.info} />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header - Consistent with CreateTaskScreen */}
       <Header 
         title="Rediger oppgave"
         subtitle={`Opprettet ${new Date(task.created_at || Date.now()).toLocaleDateString('nb-NO')}`}
         showThemeToggle={false}
-        rightComponent={
-          <Button
-            variant="secondary"
-            size="small"
-            onPress={() => navigation.goBack()}
-            disabled={saving}
-            testID="close-button"
-          >
-            Lukk
-          </Button>
-        }
       />
 
       <ScrollView 
@@ -197,7 +149,6 @@ export default function TaskDetailScreen({ navigation, route }: TaskDetailScreen
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 📝 TaskForm - Perfect reusable component with molecules */}
         <TaskForm
           formData={formData}
           onFieldChange={updateField}
@@ -205,21 +156,28 @@ export default function TaskDetailScreen({ navigation, route }: TaskDetailScreen
           showCompletedStatus={true}
           completed={completed}
           onCompletedChange={setCompleted}
-          testID="edit-task-form"
         />
       </ScrollView>
 
-      {/* 🚀 Action Buttons - Consistent styling and behavior */}
       <View style={styles.actionButtons}>
+        <Button
+          variant="secondary"
+          size="large"
+          onPress={goBackToList}
+          disabled={saving}
+          style={styles.button}
+        >
+          Tilbake
+        </Button>
+
         <Button
           variant="secondary"
           size="large"
           onPress={handleDeleteTask}
           disabled={saving}
-          style={styles.deleteButton}
-          testID="delete-button"
+          style={styles.button}
         >
-          🗑️ Slett
+          Slett
         </Button>
         
         <Button
@@ -227,26 +185,15 @@ export default function TaskDetailScreen({ navigation, route }: TaskDetailScreen
           size="large"
           onPress={handleSaveTask}
           disabled={saving}
-          style={styles.saveButton}
-          testID="save-button"
+          style={styles.button}
         >
-          {saving ? (
-            <View style={styles.buttonContent}>
-              <ActivityIndicator size="small" color="#fff" style={styles.spinner} />
-              <Text variant="body1" style={{ color: '#fff', marginLeft: 8 }}>
-                Lagrer...
-              </Text>
-            </View>
-          ) : (
-            '💾 Lagre endringer'
-          )}
+          {saving ? 'Lagrer...' : 'Lagre'}
         </Button>
       </View>
     </View>
   );
 }
 
-// 🎨 Styles - Clean and consistent
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -257,46 +204,10 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     paddingTop: 16,
   },
-  deleteButton: {
+  button: {
     flex: 1,
-  },
-  saveButton: {
-    flex: 2,
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  spinner: {
-    marginRight: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorTitle: {
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  errorSubtitle: {
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  backButton: {
-    paddingHorizontal: 32,
   },
 });

@@ -1,10 +1,8 @@
-// /src/screens/RegisterScreen.tsx - 100% MODERNE ATOMIC DESIGN! 🚀
-
+// /src/screens/RegisterScreen.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../services/supabase';
 
-// 🎨 Modern atomic design imports!
 import { Button, Input, Text } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { useTheme } from '../context/ThemeContext';
@@ -16,7 +14,6 @@ interface RegisterScreenProps {
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const { theme } = useTheme();
   
-  // 🎯 Form state - clean and simple
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,17 +23,14 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 🎯 Form handlers - super clean!
   const updateField = (field: keyof typeof formData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  // ✅ Enhanced form validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -52,8 +46,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       newErrors.password = 'Passord er påkrevd';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Passord må være minst 6 tegn';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])/.test(formData.password)) {
-      newErrors.password = 'Passord må inneholde både store og små bokstaver';
     }
 
     // Confirm password validation
@@ -67,7 +59,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔐 Register handler with enhanced error handling
   const handleRegister = async () => {
     if (!validateForm()) {
       Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
@@ -76,7 +67,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
 
     try {
       setLoading(true);
-      console.log('📝 Prøver å registrere ny bruker...');
 
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
@@ -84,9 +74,6 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       });
 
       if (error) {
-        console.log('❌ Registrering feilet:', error.message);
-        
-        // Better error messages
         let errorMessage = 'Registrering feilet';
         if (error.message.includes('User already registered')) {
           errorMessage = 'En bruker med denne e-posten eksisterer allerede';
@@ -100,12 +87,9 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         return;
       }
 
-      console.log('✅ Registrering vellykket!');
-      
-      // Success message with next steps
       Alert.alert(
-        'Registrering vellykket! 🎉',
-        'Sjekk e-posten din for bekreftelseslenke, deretter kan du logge inn.',
+        'Registrering vellykket!',
+        'Du kan nå logge inn med din nye konto.',
         [
           { 
             text: 'OK', 
@@ -115,39 +99,40 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       );
       
     } catch (error) {
-      console.log('💥 Uventet feil:', error);
+      console.error('Register error:', error);
       Alert.alert('Feil', 'En uventet feil oppstod');
     } finally {
       setLoading(false);
     }
   };
 
-  // 📱 Navigate to login
   const handleNavigateToLogin = () => {
     navigation.navigate('Login');
   };
 
-  // 🎨 Password strength indicator
-  const getPasswordStrength = (): { strength: string; color: string; message: string } => {
+  // Password strength indicator
+  const getPasswordStrength = (): { label: string; color: string } => {
     const password = formData.password;
     
-    if (!password) {
-      return { strength: '', color: '', message: '' };
-    }
+    if (!password) return { label: '', color: '' };
     
     if (password.length < 6) {
-      return { strength: 'Svakt', color: '#F44336', message: 'For kort' };
+      return { label: 'Svakt', color: '#F44336' };
     }
     
-    if (!/(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-      return { strength: 'OK', color: '#FF9800', message: 'Legg til store bokstaver' };
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    
+    if (hasLower && hasUpper && hasNumber) {
+      return { label: 'Sterkt', color: '#4CAF50' };
     }
     
-    if (!/(?=.*\d)/.test(password)) {
-      return { strength: 'Bra', color: '#4CAF50', message: 'Vurder å legge til tall' };
+    if (hasLower && hasUpper) {
+      return { label: 'Bra', color: '#4CAF50' };
     }
     
-    return { strength: 'Sterkt', color: '#4CAF50', message: 'Godt passord!' };
+    return { label: 'Middels', color: '#FF9800' };
   };
 
   const passwordStrength = getPasswordStrength();
@@ -157,16 +142,18 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 📱 Header - Using organism! */}
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Header 
-          title="Opprett ny konto 🎉"
+          title="Opprett ny konto"
           subtitle="Kom i gang med TaskMaster Pro"
           showThemeToggle={true}
         />
 
         <View style={styles.formContainer}>
-          {/* 📧 Email Input */}
           <Input
             label="E-post *"
             value={formData.email}
@@ -175,53 +162,45 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            leftIcon="📧"
             error={errors.email}
-            hint="Brukes for innlogging og viktige varsler"
             testID="register-email-input"
           />
 
-          {/* 🔒 Password Input */}
           <Input
             label="Passord *"
             value={formData.password}
             onChangeText={updateField('password')}
             placeholder="Opprett et sikkert passord"
             secureTextEntry={true}
-            leftIcon="🔒"
             error={errors.password}
-            hint="Minst 6 tegn, med store og små bokstaver"
             testID="register-password-input"
           />
 
-          {/* 💪 Password Strength Indicator */}
-          {formData.password && (
+          {formData.password && passwordStrength.label ? (
             <View style={[styles.strengthIndicator, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
               <Text variant="caption" color="secondary">
                 Passordstyrke: 
               </Text>
-              <Text variant="caption" style={{ color: passwordStrength.color, fontWeight: '600' }}>
-                {passwordStrength.strength}
-              </Text>
-              <Text variant="caption" color="secondary">
-                {passwordStrength.message && ` - ${passwordStrength.message}`}
+              <Text variant="caption" style={{ color: passwordStrength.color, fontWeight: '600', marginLeft: 4 }}>
+                {passwordStrength.label}
               </Text>
             </View>
+          ) : (
+            <Text variant="caption" color="secondary" style={styles.hintText}>
+              Minst 6 tegn
+            </Text>
           )}
 
-          {/* 🔒 Confirm Password Input */}
           <Input
             label="Bekreft passord *"
             value={formData.confirmPassword}
             onChangeText={updateField('confirmPassword')}
             placeholder="Skriv inn passordet på nytt"
             secureTextEntry={true}
-            leftIcon="✅"
             error={errors.confirmPassword}
             testID="register-confirm-password-input"
           />
 
-          {/* 🚀 Register Button */}
           <Button
             variant="primary"
             size="large"
@@ -231,10 +210,9 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
             style={styles.registerButton}
             testID="register-submit-button"
           >
-            {loading ? '🔄 Oppretter konto...' : '🎉 Opprett konto'}
+            {loading ? 'Oppretter konto...' : 'Opprett konto'}
           </Button>
 
-          {/* 📝 Login Link */}
           <View style={styles.loginSection}>
             <Text variant="body2" color="secondary" align="center">
               Har du allerede en konto?
@@ -248,36 +226,13 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
               style={styles.loginButton}
               testID="navigate-to-login-button"
             >
-              🔐 Logg inn her
+              Logg inn her
             </Button>
           </View>
 
-          {/* 📋 Terms Section */}
           <View style={[styles.termsSection, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
             <Text variant="caption" color="secondary" align="center">
-              📋 Ved å opprette en konto godtar du våre brukervilkår og personvernregler
-            </Text>
-          </View>
-
-          {/* 💡 Benefits Section */}
-          <View style={[styles.benefitsSection, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-            <Text variant="subtitle2" color="primary" style={styles.benefitsTitle}>
-              🌟 Med TaskMaster Pro får du:
-            </Text>
-            <Text variant="body2" color="secondary">
-              ✅ Ubegrenset antall oppgaver
-            </Text>
-            <Text variant="body2" color="secondary">
-              📊 Detaljert dashboard og statistikk
-            </Text>
-            <Text variant="body2" color="secondary">
-              🏷️ Kategorisering og prioritering
-            </Text>
-            <Text variant="body2" color="secondary">
-              🌙 Mørkt tema støtte
-            </Text>
-            <Text variant="body2" color="secondary">
-              📱 Synkronisering på tvers av enheter
+              Ved å opprette en konto godtar du våre brukervilkår og personvernregler
             </Text>
           </View>
         </View>
@@ -296,18 +251,19 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    justifyContent: 'center',
     maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
+    paddingTop: 20,
   },
   strengthIndicator: {
     flexDirection: 'row',
+    alignItems: 'center',
     padding: 8,
     borderRadius: 6,
     borderWidth: 1,
     marginBottom: 16,
-    marginTop: -12,
+    marginTop: -8,
   },
   registerButton: {
     marginTop: 8,
@@ -320,7 +276,7 @@ const styles = StyleSheet.create({
   },
   loginSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   loginButton: {
     marginTop: 12,
@@ -330,15 +286,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 16,
-  },
-  benefitsSection: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
     marginBottom: 20,
   },
-  benefitsTitle: {
-    marginBottom: 8,
+  hintText: {
+    marginTop: 4,
+    marginBottom: 16,
+    marginLeft: 4,
   },
 });

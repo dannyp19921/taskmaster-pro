@@ -1,31 +1,25 @@
-// /src/screens/TaskListScreen.tsx - MODERN 2025 UI/UX! 📱
-
+// /src/screens/TaskListScreen.tsx
 import React, { useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Modal, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from '../services/supabase';
 
-// 🎯 Modern imports - SUPER Clean!
 import { useTasks, useTaskFilters } from '../features/tasks';
 import TaskCard from '../features/tasks/components/TaskCard';
 
-// 🎨 UI organisms - Big reusable blocks!
 import { TaskFilterPanel } from '../shared/ui/organisms/TaskFilterPanel';
 import { EmptyState } from '../shared/ui/organisms/EmptyState';
 import { Header } from '../shared/ui/organisms/Header';
 import { Button, Text } from '../shared/ui';
 
-// 🌐 Context & Utils
 import { useTheme } from '../context/ThemeContext';
 import { getCategoryInfo } from '../shared/utils/categories';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function TaskListScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
 
-  // 🎯 POWER OF HOOKS! Business logic in 2 lines!
   const {
     tasks,
     loading,
@@ -49,12 +43,10 @@ export default function TaskListScreen({ navigation }: any) {
     filterStats,
   } = useTaskFilters(tasks);
 
-  // 🔄 Lifecycle
   useFocusEffect(useCallback(() => {
     setSelectedTaskId(null);
   }, []));
 
-  // 🎯 Event handlers - Super clean!
   const handleTaskPress = (taskId: string) => {
     setSelectedTaskId(selectedTaskId === taskId ? null : taskId);
   };
@@ -64,29 +56,29 @@ export default function TaskListScreen({ navigation }: any) {
     navigation.navigate('TaskDetail', { taskId });
   };
 
-  // ✅ React Native compatible Alert
   const handleTaskDelete = async (taskId: string, taskTitle: string) => {
-    Alert.alert(
-      'Slett oppgave', 
-      `Er du sikker på at du vil slette "${taskTitle}"?`,
-      [
-        {
-          text: 'Avbryt',
-          style: 'cancel',
-          onPress: () => setSelectedTaskId(null)
-        },
-        {
-          text: 'Slett',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await deleteTask(taskId); 
-            if (success) {
-              setSelectedTaskId(null); 
-            }
-          }
-        }
-      ]
-    );
+    // Use window.confirm for web, Alert for native
+    const confirmDelete = Platform.OS === 'web' 
+      ? window.confirm(`Er du sikker på at du vil slette "${taskTitle}"?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            'Slett oppgave',
+            `Er du sikker på at du vil slette "${taskTitle}"?`,
+            [
+              { text: 'Avbryt', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Slett', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        });
+
+    if (confirmDelete) {
+      const success = await deleteTask(taskId);
+      if (success) {
+        setSelectedTaskId(null);
+      }
+    } else {
+      setSelectedTaskId(null);
+    }
   };
 
   const handleRefresh = () => {
@@ -94,7 +86,6 @@ export default function TaskListScreen({ navigation }: any) {
     refresh();
   };
 
-  // 📊 Get category counts for filter panel
   const getCategoryCounts = () => {
     const counts: Record<string, number> = {
       all: tasks.length,
@@ -108,7 +99,6 @@ export default function TaskListScreen({ navigation }: any) {
     return counts;
   };
 
-  // 📊 Get empty state message and props
   const getEmptyStateProps = () => {
     if (searchText.trim()) {
       return {
@@ -133,7 +123,7 @@ export default function TaskListScreen({ navigation }: any) {
     
     if (filter === 'active') {
       return {
-        title: 'Alle oppgaver fullført! 🎉',
+        title: 'Alle oppgaver fullført!',
         description: 'Du har ingen aktive oppgaver akkurat nå.',
         actionLabel: 'Opprett ny oppgave',
         onAction: () => navigation.navigate('CreateTask'),
@@ -149,16 +139,14 @@ export default function TaskListScreen({ navigation }: any) {
       };
     }
     
-    // No tasks at all
     return {
       title: 'Velkommen til TaskMaster Pro!',
       description: 'Du har ingen oppgaver ennå. Opprett din første oppgave for å komme i gang.',
-      actionLabel: '➕ Opprett din første oppgave',
+      actionLabel: 'Opprett din første oppgave',
       onAction: () => navigation.navigate('CreateTask'),
     };
   };
 
-  // 🎯 Get active filter summary for display
   const getFilterSummary = () => {
     const parts = [];
     
@@ -184,14 +172,12 @@ export default function TaskListScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* ✅ PROPER STATUS BAR */}
       <StatusBar 
         barStyle={theme.textPrimary === '#333333' ? 'dark-content' : 'light-content'}
         backgroundColor={theme.background}
         translucent={false}
       />
       
-      {/* 📱 MINIMAL HEADER - Clean & Simple */}
       <View style={[styles.headerContainer, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
         <View style={styles.headerRow}>
           <View style={styles.titleSection}>
@@ -203,18 +189,30 @@ export default function TaskListScreen({ navigation }: any) {
             </Text>
           </View>
           
-          <Button
-            variant="info"
-            size="small"
-            onPress={() => navigation.navigate('Dashboard')}
-            style={styles.dashboardButton}
-          >
-            📊 Dashboard
-          </Button>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button
+              variant="info"
+              size="small"
+              onPress={() => navigation.navigate('Dashboard')}
+              style={styles.dashboardButton}
+            >
+              Dashboard
+            </Button>
+            
+            <Button
+              variant="secondary"
+              size="small"
+              onPress={async () => {
+                await supabase.auth.signOut();
+              }}
+              style={styles.dashboardButton}
+            >
+              Logg ut
+            </Button>
+          </View>
         </View>
       </View>
 
-      {/* 🎛️ MODERN FILTER BAR - Minimal & Clean */}
       <View style={[styles.filterBar, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
         <Button
           variant={filterStats.hasActiveFilters ? 'primary' : 'secondary'}
@@ -222,17 +220,15 @@ export default function TaskListScreen({ navigation }: any) {
           onPress={() => setFilterModalVisible(true)}
           style={styles.filterButton}
         >
-          🎛️ Filtre{filterStats.hasActiveFilters ? ' (aktive)' : ''}
+          Filtre{filterStats.hasActiveFilters ? ' (aktive)' : ''}
         </Button>
         
-        {/* Active filter summary */}
         <View style={styles.filterSummary}>
           <Text variant="caption" color="secondary" numberOfLines={1}>
             {getFilterSummary()}
           </Text>
         </View>
         
-        {/* Clear filters button */}
         {filterStats.hasActiveFilters && (
           <Button
             variant="secondary"
@@ -240,12 +236,11 @@ export default function TaskListScreen({ navigation }: any) {
             onPress={clearFilters}
             style={styles.clearButton}
           >
-            ✕ Tøm
+            Tøm
           </Button>
         )}
       </View>
 
-      {/* 📋 MAIN TASK LIST - FULL SCREEN REAL ESTATE */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -291,7 +286,6 @@ export default function TaskListScreen({ navigation }: any) {
         )}
       </View>
 
-      {/* ➕ SIMPLE CREATE BUTTON */}
       <View style={[styles.createButtonContainer, { backgroundColor: theme.background }]}>
         <Button
           variant="primary"
@@ -300,11 +294,10 @@ export default function TaskListScreen({ navigation }: any) {
           onPress={() => navigation.navigate('CreateTask')}
           style={styles.createButton}
         >
-          ➕ Opprett ny oppgave
+          Opprett ny oppgave
         </Button>
       </View>
 
-      {/* 🎛️ FULLSCREEN FILTER MODAL - Modern Pattern */}
       <Modal
         visible={filterModalVisible}
         animationType="slide"
@@ -312,10 +305,9 @@ export default function TaskListScreen({ navigation }: any) {
         onRequestClose={() => setFilterModalVisible(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          {/* Modal Header */}
           <View style={[styles.modalHeader, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
             <Text variant="h4" color="primary" style={styles.modalTitle}>
-              🎛️ Filtrer oppgaver
+              Filtrer oppgaver
             </Text>
             <Button
               variant="secondary"
@@ -323,11 +315,10 @@ export default function TaskListScreen({ navigation }: any) {
               onPress={() => setFilterModalVisible(false)}
               style={styles.closeButton}
             >
-              ✕ Lukk
+              Lukk
             </Button>
           </View>
 
-          {/* Filter Content - Full Space */}
           <View style={styles.modalContent}>
             <TaskFilterPanel
               searchText={searchText}
@@ -346,7 +337,6 @@ export default function TaskListScreen({ navigation }: any) {
             />
           </View>
 
-          {/* Modal Actions */}
           <View style={[styles.modalActions, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
             <Button
               variant="secondary"
@@ -354,7 +344,7 @@ export default function TaskListScreen({ navigation }: any) {
               onPress={clearFilters}
               style={styles.clearAllButton}
             >
-              🗑️ Tøm alle filtre
+              Tøm alle filtre
             </Button>
             <Button
               variant="primary"
@@ -362,7 +352,7 @@ export default function TaskListScreen({ navigation }: any) {
               onPress={() => setFilterModalVisible(false)}
               style={styles.applyButton}
             >
-              ✅ Bruk filtre ({filteredTasks.length})
+              Bruk filtre ({filteredTasks.length})
             </Button>
           </View>
         </View>
@@ -371,14 +361,11 @@ export default function TaskListScreen({ navigation }: any) {
   );
 }
 
-// 🎨 MODERN 2025 UI STYLES
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
-  
-  // MINIMAL HEADER
   headerContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -403,8 +390,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  
-  // MODERN FILTER BAR
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -422,10 +407,8 @@ const styles = StyleSheet.create({
   clearButton: {
     paddingHorizontal: 12,
   },
-  
-  // FULL SCREEN LIST
   listContainer: {
-    flex: 1, // Takes ALL remaining space
+    flex: 1,
   },
   flatList: {
     flex: 1,
@@ -435,8 +418,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
   },
-  
-  // LOADING/EMPTY
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -449,8 +430,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  
-  // SIMPLE BUTTON
   createButtonContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -463,8 +442,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-
-  // FULLSCREEN FILTER MODAL
   modalContainer: {
     flex: 1,
   },

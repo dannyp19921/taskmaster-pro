@@ -1,10 +1,8 @@
-// /src/screens/LoginScreen.tsx - 100% MODERNE ATOMIC DESIGN! 🚀
-
+// /src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../services/supabase';
 
-// 🎨 Modern atomic design imports!
 import { Button, Input, Text } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { useTheme } from '../context/ThemeContext';
@@ -16,7 +14,6 @@ interface LoginScreenProps {
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const { theme } = useTheme();
   
-  // 🎯 Form state - clean and simple
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,17 +22,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 🎯 Form handlers - super clean!
   const updateField = (field: keyof typeof formData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  // ✅ Form validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -55,7 +49,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔐 Login handler with modern error handling
   const handleLogin = async () => {
     if (!validateForm()) {
       Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
@@ -64,7 +57,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       setLoading(true);
-      console.log('🔐 Prøver å logge inn...');
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
@@ -72,9 +64,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       });
 
       if (error) {
-        console.log('❌ Login feilet:', error.message);
-        
-        // Better error messages
         let errorMessage = 'Innlogging feilet';
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'Ugyldig e-post eller passord';
@@ -86,19 +75,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         return;
       }
 
-      console.log('✅ Innlogging vellykket!');
-      Alert.alert('Velkommen! 🎉', 'Du er nå logget inn');
-      navigation.navigate('TaskList');
+      Alert.alert('Velkommen!', 'Du er nå logget inn');
       
     } catch (error) {
-      console.log('💥 Uventet feil:', error);
+      console.error('Login error:', error);
       Alert.alert('Feil', 'En uventet feil oppstod');
     } finally {
       setLoading(false);
     }
   };
 
-  // 📱 Navigate to register
   const handleNavigateToRegister = () => {
     navigation.navigate('Register');
   };
@@ -108,15 +94,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* 📱 Header - Using organism! */}
       <Header 
-        title="Velkommen tilbake! 👋"
+        title="Velkommen tilbake!"
         subtitle="Logg inn for å fortsette"
         showThemeToggle={true}
       />
 
       <View style={styles.formContainer}>
-        {/* 📧 Email Input */}
         <Input
           label="E-post *"
           value={formData.email}
@@ -125,25 +109,21 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
-          leftIcon="📧"
           error={errors.email}
           testID="login-email-input"
         />
 
-        {/* 🔒 Password Input */}
         <Input
           label="Passord *"
           value={formData.password}
           onChangeText={updateField('password')}
           placeholder="Skriv inn passordet ditt"
           secureTextEntry={true}
-          leftIcon="🔒"
           error={errors.password}
           hint="Minst 6 tegn"
           testID="login-password-input"
         />
 
-        {/* 🚀 Login Button */}
         <Button
           variant="primary"
           size="large"
@@ -153,10 +133,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           style={styles.loginButton}
           testID="login-submit-button"
         >
-          {loading ? '🔄 Logger inn...' : '🔐 Logg inn'}
+          {loading ? 'Logger inn...' : 'Logg inn'}
         </Button>
 
-        {/* 📝 Register Link */}
         <View style={styles.registerSection}>
           <Text variant="body2" color="secondary" align="center">
             Har du ikke konto ennå?
@@ -170,14 +149,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={styles.registerButton}
             testID="navigate-to-register-button"
           >
-            ➕ Opprett ny konto
+            Opprett ny konto
           </Button>
         </View>
 
-        {/* 💡 Help Section */}
         <View style={[styles.helpSection, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
           <Text variant="caption" color="secondary" align="center">
-            💡 Tips: Bruk samme e-post og passord som du registrerte deg med
+            Tips: Bruk samme e-post og passord som du registrerte deg med
           </Text>
         </View>
       </View>

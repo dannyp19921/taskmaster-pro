@@ -1,8 +1,10 @@
 // App.tsx
-
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native'; 
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
-import HomeScreen from './src/screens/HomeScreen';
+import { supabase } from './src/services/supabase';
+
 import LoginScreen from './src/screens/LoginScreen'; 
 import RegisterScreen from './src/screens/RegisterScreen';
 import TaskListScreen from './src/screens/TaskListScreen';
@@ -11,24 +13,63 @@ import TaskDetailScreen from './src/screens/TaskDetailScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
 
+const Stack = createNativeStackNavigator();
+
 export default function App() {
-  const Stack = createNativeStackNavigator(); 
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkUserSession();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(session !== null);
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  const checkUserSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(session !== null);
+    } catch (error) {
+      console.error('Session check error:', error);
+      setIsLoggedIn(false);
+    }
+  };
+
+  if (isLoggedIn === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   return (
     <ThemeProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
-
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="TaskList" component={TaskListScreen} />
-          <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
-          <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-
+        <Stack.Navigator 
+          initialRouteName={isLoggedIn ? "TaskList" : "Login"}
+          screenOptions={{ headerShown: false }}
+        >
+          {isLoggedIn ? (
+            <>
+              <Stack.Screen name="TaskList" component={TaskListScreen} />
+              <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
+              <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+              <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          )}
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>
-  )
+  );
 }

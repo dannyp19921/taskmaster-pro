@@ -1,4 +1,4 @@
-// /src/features/tasks/hooks/useTasks.ts - KONSOLIDERT: Alle task operasjoner i én hook! 🚀
+// /src/features/tasks/hooks/useTasks.ts
 import { useState, useEffect, useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
 import { supabase } from '../../../services/supabase';
@@ -10,8 +10,6 @@ interface UseTasksReturn {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
-  
-  // NYTT: CreateTask state
   creating: boolean;
 
   // Actions
@@ -36,16 +34,12 @@ export const useTasks = (): UseTasksReturn => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [creating, setCreating] = useState(false); // NYTT: For createTask loading
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 📥 Fetch tasks from database
+  // Fetch tasks from database
   const fetchTasks = useCallback(async (isRefreshing = false) => {
     try {
-      // 🔍 DEBUG: Legg console.log HER, øverst i try-blokken
-      console.log('🔍 MOBILE DEBUG: Fetching tasks...');
-      console.log('🔍 Platform:', Platform.OS);
-      
       if (isRefreshing) {
         setRefreshing(true);
       } else {
@@ -55,10 +49,6 @@ export const useTasks = (): UseTasksReturn => {
       setError(null);
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      // 🔍 DEBUG: Legg console.log HER, rett etter getUser()
-      console.log('🔍 User on mobile:', user?.email || 'NOT LOGGED IN');
-      console.log('🔍 User error:', userError?.message || 'none');
       
       if (!user) {
         throw new Error('Bruker ikke logget inn');
@@ -70,19 +60,12 @@ export const useTasks = (): UseTasksReturn => {
         .eq('user_id', user.id)
         .order('due_date', { ascending: true });
 
-      // 🔍 DEBUG: Legg console.log HER, etter database query
-      console.log('🔍 Fetched tasks count:', data?.length || 0);
-      console.log('🔍 Fetch error:', fetchError?.message || 'none');
-
       if (fetchError) {
         throw new Error(fetchError.message);
       }
 
       setTasks(data || []);
     } catch (err: any) {
-      // 🔍 DEBUG: Legg console.log HER, i catch blokken
-      console.log('🔍 ERROR caught:', err.message);
-      
       const errorMessage = err.message || 'Kunne ikke hente oppgaver';
       setError(errorMessage);
       
@@ -99,7 +82,7 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  // ➕ FORBEDRET: Create new task med bedre validering og feedback
+  // Create new task
   const createTask = useCallback(async (taskData: CreateTaskDto): Promise<Task | null> => {
     try {
       setCreating(true);
@@ -110,7 +93,7 @@ export const useTasks = (): UseTasksReturn => {
         throw new Error('Bruker ikke logget inn');
       }
 
-      // NYTT: Frontend validering
+      // Frontend validation
       if (!taskData.title.trim()) {
         throw new Error('Tittel er påkrevd');
       }
@@ -137,12 +120,11 @@ export const useTasks = (): UseTasksReturn => {
         throw new Error(error.message);
       }
 
-      // Oppdater lokal state
+      // Update local state
       setTasks(prevTasks => [...prevTasks, data]);
       
-      // NYTT: Success feedback
       Alert.alert(
-        'Suksess! 🎉', 
+        'Suksess!', 
         `Oppgaven "${data.title}" ble opprettet`,
         [{ text: 'OK' }]
       );
@@ -159,22 +141,19 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  // ✏️ Update existing task
-  const updateTask = useCallback(async (id: string, updates: UpdateTaskDto): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+  // Update existing task
+ const updateTask = useCallback(async (id: string, updates: UpdateTaskDto): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('tasks')
+      .update(updates)  // <-- Bare send updates direkte, uten updated_at
+      .eq('id', id);
 
       if (error) {
         throw new Error(error.message);
       }
 
-      // Oppdater lokal state
+      // Update local state
       setTasks(prevTasks =>
         prevTasks.map(task =>
           task.id === id ? { ...task, ...updates } : task
@@ -190,31 +169,31 @@ export const useTasks = (): UseTasksReturn => {
     }
   }, []);
 
-  // 🗑️ Delete task
+  // Delete task
   const deleteTask = useCallback(async (id: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Oppdater lokal state
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-
-      return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Kunne ikke slette oppgave';
-      Alert.alert('Feil', errorMessage);
-      console.error('Delete task error:', err);
-      return false;
+    if (error) {
+      throw new Error(error.message);
     }
-  }, []);
 
-  // ✅ Toggle task completion status
+    // Update local state
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+
+    return true;
+  } catch (err: any) {
+    const errorMessage = err.message || 'Kunne ikke slette oppgave';
+    Alert.alert('Feil', errorMessage);
+    console.error('Delete task error:', err);
+    return false;
+  }
+}, []);
+
+  // Toggle task completion status
   const toggleTaskStatus = useCallback(async (id: string): Promise<boolean> => {
     const task = tasks.find(t => t.id === id);
     if (!task) return false;
@@ -223,17 +202,12 @@ export const useTasks = (): UseTasksReturn => {
     return await updateTask(id, { status: newStatus });
   }, [tasks, updateTask]);
 
-  // 🔄 Refresh tasks
+  // Refresh tasks
   const refresh = useCallback(() => {
     fetchTasks(true);
   }, [fetchTasks]);
 
-  // NYTT: Reset error function (for CreateTaskScreen)
-  const resetError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  // 📊 Computed values
+  // Computed values
   const activeTasks = tasks.filter(task => task.status === 'open');
   const completedTasks = tasks.filter(task => task.status === 'completed');
   
@@ -243,28 +217,23 @@ export const useTasks = (): UseTasksReturn => {
     completed: completedTasks.length,
   };
 
-  // 🚀 Initial fetch on mount
+  // Initial fetch on mount
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
   return {
-    // State
     tasks,
     loading,
     refreshing,
-    creating, // NYTT: For createTask loading state
+    creating,
     error,
-
-    // Actions
     fetchTasks,
     createTask,
     updateTask,
     deleteTask,
     toggleTaskStatus,
     refresh,
-
-    // Computed
     activeTasks,
     completedTasks,
     taskCounts,

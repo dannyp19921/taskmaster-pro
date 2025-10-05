@@ -1,12 +1,9 @@
-// /src/screens/DashboardScreen.tsx - 100% Modern Architecture! 📊✨
-
+// /src/screens/DashboardScreen.tsx
 import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 
-// 🎯 Business logic hooks
 import { useDashboardData } from '../features/tasks/hooks/useDashboardData';
 
-// 🎨 UI components - Perfect atomic design!
 import { Button, Text } from '../shared/ui';
 import { Header } from '../shared/ui/organisms/Header';
 import { 
@@ -16,7 +13,6 @@ import {
   PriorityOverview 
 } from '../shared/ui/organisms/DashboardComponents';
 
-// 🌐 Context
 import { useTheme } from '../context/ThemeContext';
 
 interface DashboardScreenProps {
@@ -26,7 +22,6 @@ interface DashboardScreenProps {
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { theme } = useTheme();
   
-  // 🎯 All business logic in custom hook!
   const { 
     stats, 
     loading, 
@@ -36,7 +31,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     retry 
   } = useDashboardData();
 
-  // 🔄 Loading state
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
@@ -48,7 +42,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     );
   }
 
-  // ❌ Error state
   if (error) {
     return (
       <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
@@ -61,7 +54,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           onPress={retry}
           style={styles.retryButton}
         >
-          🔄 Prøv igjen
+          Prøv igjen
         </Button>
       </View>
     );
@@ -69,7 +62,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* 📱 Header - Using organism! */}
       <Header 
         title="Dashboard"
         subtitle="Oversikt over dine oppgaver"
@@ -88,10 +80,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           />
         }
       >
-        {/* 📊 Main Statistics */}
         <View style={styles.section}>
           <Text variant="h3" color="primary" style={styles.sectionTitle}>
-            📊 Oversikt
+            Oversikt
           </Text>
           
           <View style={styles.statsGrid}>
@@ -99,7 +90,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
               title="Totalt oppgaver"
               value={stats.total}
               color="#007AFF"
-              icon="📝"
+              icon="📋"
               testID="total-tasks-card"
             />
             
@@ -131,7 +122,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             />
           </View>
 
-          {/* Progress indicator */}
           <ProgressBar 
             progress={stats.completionRate} 
             color="#4CAF50"
@@ -140,10 +130,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           />
         </View>
 
-        {/* ⏰ Upcoming Deadlines */}
         <View style={styles.section}>
           <Text variant="h3" color="primary" style={styles.sectionTitle}>
-            ⏰ Kommende frister
+            Kommende frister
           </Text>
           
           <View style={styles.statsGrid}>
@@ -165,10 +154,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
         </View>
 
-        {/* ⚡ Priority Overview */}
         <View style={styles.section}>
           <Text variant="h3" color="primary" style={styles.sectionTitle}>
-            ⚡ Aktive prioriteter
+            Aktive prioriteter
           </Text>
           
           <PriorityOverview
@@ -179,11 +167,10 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           />
         </View>
 
-        {/* 🏷️ Category Distribution */}
         {stats.categoryStats.length > 0 && (
           <View style={styles.section}>
             <Text variant="h3" color="primary" style={styles.sectionTitle}>
-              🏷️ Kategorier
+              Kategorier
             </Text>
             
             <CategoryList 
@@ -193,10 +180,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
         )}
 
-        {/* 📈 This Week */}
         <View style={styles.section}>
           <Text variant="h3" color="primary" style={styles.sectionTitle}>
-            📈 Denne uken
+            Denne uken
           </Text>
           
           <View style={styles.statsGrid}>
@@ -218,10 +204,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
         </View>
 
-        {/* 🚀 Quick Actions */}
         <View style={styles.actionSection}>
           <Text variant="h3" color="primary" style={styles.sectionTitle}>
-            🚀 Handlinger
+            Handlinger
           </Text>
           
           <Button
@@ -231,7 +216,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             style={styles.actionButton}
             testID="create-task-button"
           >
-            ➕ Opprett ny oppgave
+            Opprett ny oppgave
           </Button>
           
           <Button
@@ -241,11 +226,10 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             style={styles.actionButton}
             testID="view-all-tasks-button"
           >
-            📋 Se alle oppgaver
+            Se alle oppgaver
           </Button>
         </View>
 
-        {/* Bottom spacing for scroll */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>

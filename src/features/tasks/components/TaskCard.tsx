@@ -1,10 +1,8 @@
-// /src/features/tasks/components/TaskCard.tsx - REFACTORED with molecules! 🚀
-
+// /src/features/tasks/components/TaskCard.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 
-// 🎨 Modern atomic design imports!
 import { Text } from '../../../shared/ui/atoms/Text';
 import { TaskStatus } from '../../../shared/ui/molecules/TaskStatus';
 import { TaskActions } from '../../../shared/ui/molecules/TaskActions';
@@ -40,7 +38,6 @@ export default function TaskCard({
   const { theme } = useTheme();
   const isCompleted = task.status === 'completed';
 
-  // 🎨 Get deadline color for left border
   const getDeadlineColor = () => {
     if (isCompleted) return theme.completed;
     
@@ -59,15 +56,7 @@ export default function TaskCard({
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* 🗑️ Delete Background (appears when selected) */}
-      {isSelected && (
-        <View style={[styles.deleteBackground, { backgroundColor: theme.error }]}>
-          <Text variant="body1" style={styles.deleteIcon}>🗑️</Text>
-          <Text variant="caption" style={styles.deleteText}>Slett</Text>
-        </View>
-      )}
-      
-      {/* 📱 Main Card */}
+      {/* Main Card */}
       <View style={[
         styles.card,
         { 
@@ -79,16 +68,15 @@ export default function TaskCard({
           borderLeftWidth: 4, 
           borderLeftColor: getDeadlineColor() 
         },
-        isSelected && { marginRight: 80 }
       ]}>
         
-        {/* 🎯 Main Content Area */}
+        {/* Main Content Area */}
         <TouchableOpacity 
           onPress={onPress} 
           style={styles.content}
           testID={`${testID}-content`}
         >
-          {/* 📝 Title Row */}
+          {/* Title Row */}
           <View style={styles.titleRow}>
             <Text 
               variant="subtitle1" 
@@ -105,7 +93,7 @@ export default function TaskCard({
               {task.title}
             </Text>
             
-            {/* ✅ Completion Indicator */}
+            {/* Completion Indicator */}
             {isCompleted && (
               <Text variant="h6" style={{ color: theme.completed }}>
                 ✓
@@ -113,14 +101,14 @@ export default function TaskCard({
             )}
           </View>
           
-          {/* 🏷️ Category Badge */}
+          {/* Category Badge */}
           <CategoryBadge 
             category={task.category} 
             size="small"
             testID={`${testID}-category`}
           />
           
-          {/* 📊 Status Information */}
+          {/* Status Information */}
           <TaskStatus
             dueDate={task.due_date}
             status={task.status}
@@ -130,7 +118,7 @@ export default function TaskCard({
           />
         </TouchableOpacity>
         
-        {/* 🎛️ Action Buttons */}
+        {/* Action Buttons */}
         <TaskActions
           isSelected={isSelected}
           onEdit={onEdit}
@@ -147,27 +135,6 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 10,
     position: 'relative',
-  },
-  deleteBackground: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-  },
-  deleteIcon: {
-    fontSize: 20,
-    color: '#fff',
-    marginBottom: 4,
-  },
-  deleteText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   card: {
     borderRadius: 8,

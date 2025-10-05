@@ -1,9 +1,7 @@
-// /src/context/ThemeContext.tsx - Med AsyncStorage persistence! 🌙
-
+// /src/context/ThemeContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Theme colors (unchanged)
 export const lightTheme = {
   // Backgrounds
   background: '#f5f5f5',
@@ -47,7 +45,7 @@ export const darkTheme = {
   border: '#4a4a4a',
   shadow: 'rgba(0, 0, 0, 0.3)',
   
-  // Status colors (slightly adjusted for dark mode)
+  // Status colors
   success: '#66BB6A',
   warning: '#FFA726',
   error: '#EF5350',
@@ -78,10 +76,9 @@ interface ThemeProviderProps {
 const THEME_STORAGE_KEY = '@taskmaster_theme_preference';
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🔄 Load saved theme preference on app start
   useEffect(() => {
     loadThemePreference();
   }, []);
@@ -92,14 +89,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       if (savedTheme !== null) {
         const isDark = JSON.parse(savedTheme);
         setIsDarkMode(isDark);
-        console.log('🎨 Loaded theme preference:', isDark ? 'dark' : 'light');
-      } else {
-        // Default to system preference if available
-        // For now, default to light mode
-        console.log('🎨 No saved theme, defaulting to light mode');
       }
     } catch (error) {
-      console.error('❌ Error loading theme preference:', error);
+      console.error('Error loading theme preference:', error);
     } finally {
       setIsLoading(false);
     }
@@ -108,9 +100,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const saveThemePreference = async (isDark: boolean) => {
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(isDark));
-      console.log('💾 Saved theme preference:', isDark ? 'dark' : 'light');
     } catch (error) {
-      console.error('❌ Error saving theme preference:', error);
+      console.error('Error saving theme preference:', error);
     }
   };
 
@@ -127,9 +118,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   const theme = isDarkMode ? darkTheme : lightTheme;
 
-  // Don't render children until theme is loaded
   if (isLoading) {
-    return null; // Or a splash screen component
+    return null;
   }
 
   return (
