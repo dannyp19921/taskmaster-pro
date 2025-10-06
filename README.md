@@ -87,21 +87,55 @@ Users will receive updates automatically on next app launch.
 ```
 taskmaster-pro/
 ├── src/
-│   ├── components/        # Reusable UI components
-│   ├── context/          # React Context (Theme)
-│   ├── features/         # Feature modules
-│   │   └── tasks/        # Task-related logic
-│   │       ├── components/
-│   │       ├── hooks/
-│   │       └── types/
-│   ├── screens/          # Screen components
-│   ├── services/         # External services (Supabase)
-│   └── shared/           # Shared utilities
-│       └── utils/        # Utility functions
-├── App.tsx              # Root component
-├── .env                 # Environment variables (not in git)
-└── eas.json            # EAS Build configuration
+│   ├── core/                # Core infrastructure
+│   │   ├── api/            # API clients (Supabase)
+│   │   ├── theme/          # Theme provider and styling
+│   │   └── config/         # App configuration (reserved for future use)
+│   ├── navigation/         # Navigation setup (React Navigation)
+│   ├── features/           # Feature modules (business logic)
+│   │   └── tasks/
+│   │       ├── components/ # Feature-specific UI components
+│   │       ├── hooks/      # Custom hooks (useTasks, useTaskFilters)
+│   │       └── types/      # TypeScript type definitions
+│   ├── screens/            # Screen components
+│   ├── components/         # Shared/reusable UI components
+│   └── shared/             # Shared utilities
+│       └── utils/          # Helper functions (validation, alerts, etc.)
+├── App.tsx                 # Root component
+├── .env                    # Environment variables (not in git)
+├── .env.example            # Environment template (commit this)
+└── eas.json               # EAS Build & Update configuration
 ```
+
+## Architecture
+
+The application follows a **feature-based architecture** with clear separation of concerns:
+
+### Core Infrastructure (`src/core/`)
+- **API Layer** (`core/api/`): Supabase client configuration with environment validation
+- **Theme System** (`core/theme/`): Centralized theming with dark/light mode support
+- **Configuration** (`core/config/`): Reserved for app constants and feature flags
+
+### Navigation (`src/navigation/`)
+- Clean separation of routing logic from screens
+- React Navigation setup with authentication flow
+- Type-safe navigation parameters
+
+### Features (`src/features/`)
+- **Feature-based organization**: Related code grouped together
+- **Business logic in hooks**: Separation from UI components
+- **Co-location principle**: Components, hooks, and types live together
+
+### Screens vs Components
+- **Screens** (`src/screens/`): Container components that orchestrate features
+- **Feature Components** (`src/features/*/components/`): Feature-specific presentational components
+- **Shared Components** (`src/components/`): Reusable UI components used across features
+
+### Architecture Benefits
+- **Scalability**: Easy to add new features without affecting existing code
+- **Maintainability**: Clear structure makes code easy to find and modify
+- **Testability**: Isolated business logic in hooks
+- **Cross-platform**: Shared logic works identically on web, iOS, and Android
 
 ## Database Schema
 
@@ -136,15 +170,6 @@ The application uses Supabase with the following main table:
 - Custom hooks for business logic
 - Separation of concerns (UI, business logic, services)
 - Theme-based styling for dark/light mode support
-
-## Architecture
-
-The application follows clean architecture principles:
-
-- **Presentation Layer**: React components and screens
-- **Business Logic**: Custom hooks (useTasks, useDashboardData, etc.)
-- **Data Layer**: Supabase service with type-safe queries
-- **Shared Utilities**: Validation, error handling, platform-specific helpers
 
 ## Security
 
