@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/CategoryBadge.tsx - Category display molecule! 🏷️
+// /src/components/CategoryBadge.tsx
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';

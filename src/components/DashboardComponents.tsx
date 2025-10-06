@@ -1,4 +1,4 @@
-// /src/shared/ui/organisms/DashboardComponents.tsx - Reusable dashboard organisms! 📊
+// /src/components/DashboardComponents.tsx
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';

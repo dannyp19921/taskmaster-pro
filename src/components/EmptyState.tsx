@@ -1,4 +1,4 @@
-// /src/shared/ui/organisms/EmptyState.tsx - Fixed styling! 🌕
+// /src/components/EmptyState.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from './Button';

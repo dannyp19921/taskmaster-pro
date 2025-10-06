@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/Calendar.tsx - Universal calendar component! 📅
+// /src/components/Calendar.tsx
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Text } from './Text';

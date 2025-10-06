@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/FilterButtons.tsx - Perfect atomic design! 🎨
+// /src/components/FilterButtons.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from './Button';

@@ -1,4 +1,4 @@
-// /src/shared/ui/organisms/Header.tsx - Reusable app header! 📱
+// /src/components/Header.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';

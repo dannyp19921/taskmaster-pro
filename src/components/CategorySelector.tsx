@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/CategorySelector.tsx - Gjenbrukbar kategori-velger! 🏷️
+// /src/components/CategorySelector.tsx
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';

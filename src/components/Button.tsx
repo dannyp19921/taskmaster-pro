@@ -1,4 +1,4 @@
-// /src/shared/ui/atoms/Button.tsx - Simplified version
+// /src/components/Button.tsx
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -12,7 +12,6 @@ interface ButtonProps {
   size?: ButtonSize;
   disabled?: boolean;
   fullWidth?: boolean;
-  icon?: string;
   onPress?: () => void;
   style?: ViewStyle;
   testID?: string;
@@ -24,7 +23,6 @@ export const Button: React.FC<ButtonProps> = ({
   size = 'medium',
   disabled = false,
   fullWidth = false,
-  icon,
   onPress,
   style,
   testID,
@@ -98,7 +96,7 @@ export const Button: React.FC<ButtonProps> = ({
           fontWeight: variant === 'secondary' ? '500' : '600',
         }
       ]}>
-        {icon && `${icon} `}{children}
+        {children}
       </Text>
     </TouchableOpacity>
   );

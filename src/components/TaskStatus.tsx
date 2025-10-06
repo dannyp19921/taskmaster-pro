@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/TaskStatus.tsx - Task status & deadline molecule! ⏰
+// /src/components/TaskStatus.tsx
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';

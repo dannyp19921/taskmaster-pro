@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/PrioritySelector.tsx - Gjenbrukbar prioritet-velger! ⚡
+// /src/components/PrioritySelector.tsx
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';

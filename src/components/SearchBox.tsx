@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/SearchBox.tsx - Perfect atomic design! 🎨
+// /src/components/SearchBox.tsx
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Input } from './Input';

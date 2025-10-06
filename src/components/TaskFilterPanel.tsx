@@ -1,4 +1,4 @@
-// /src/shared/ui/organisms/TaskFilterPanel.tsx - Complete filter system!
+// /src/components/TaskFilterPanel.tsx
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button } from './Button';

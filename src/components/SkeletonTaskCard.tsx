@@ -1,4 +1,4 @@
-// /src/shared/ui/atoms/SkeletonTaskCard.tsx - Modern loading skeleton! 
+// /src/components/SkeletonTaskCard.tsx
 
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';

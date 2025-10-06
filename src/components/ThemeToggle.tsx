@@ -1,4 +1,4 @@
-// /src/components/ThemeToggle.tsx - Dark mode switch komponent
+// /src/components/ThemeToggle.tsx
 
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';

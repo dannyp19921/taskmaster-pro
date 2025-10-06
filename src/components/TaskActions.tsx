@@ -1,4 +1,4 @@
-// /src/shared/ui/molecules/TaskActions.tsx
+// /src/components/TaskActions.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from './Button';

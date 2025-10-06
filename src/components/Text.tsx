@@ -1,4 +1,4 @@
-// /src/shared/ui/atoms/Text.tsx - Simplified version
+// /src/components/Text.tsx
 import React from 'react';
 import { Text as RNText, TextStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

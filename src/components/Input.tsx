@@ -1,4 +1,4 @@
-// /src/shared/ui/atoms/Input.tsx - Complete with error and textarea support
+// /src/components/Input.tsx
 import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -12,8 +12,6 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   hint?: string;
   variant?: InputVariant;
   size?: InputSize;
-  leftIcon?: string;
-  rightIcon?: string;
   disabled?: boolean;
   testID?: string;
 }
@@ -24,8 +22,6 @@ export const Input: React.FC<InputProps> = ({
   hint,
   variant = 'default',
   size = 'medium',
-  leftIcon,
-  rightIcon,
   disabled = false,
   testID,
   ...textInputProps
@@ -67,7 +63,7 @@ export const Input: React.FC<InputProps> = ({
   const variantStyles = getVariantStyles();
 
   const getBorderColor = () => {
-    if (error) return '#F44336'; // Red for errors
+    if (error) return theme.error;
     if (isFocused) return theme.info;
     return theme.border;
   };
@@ -88,12 +84,6 @@ export const Input: React.FC<InputProps> = ({
         },
         variantStyles,
       ]}>
-        {leftIcon && (
-          <Text style={[styles.icon, { color: theme.textSecondary }]}>
-            {leftIcon}
-          </Text>
-        )}
-        
         <TextInput
           style={[
             styles.input,
@@ -114,16 +104,10 @@ export const Input: React.FC<InputProps> = ({
           testID={testID}
           {...textInputProps}
         />
-        
-        {rightIcon && (
-          <Text style={[styles.icon, { color: theme.textSecondary }]}>
-            {rightIcon}
-          </Text>
-        )}
       </View>
 
       {error && (
-        <Text style={[styles.errorText, { color: '#F44336' }]}>
+        <Text style={[styles.errorText, { color: theme.error }]}>
           {error}
         </Text>
       )}
@@ -155,10 +139,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 0,
-  },
-  icon: {
-    fontSize: 16,
-    marginHorizontal: 4,
   },
   errorText: {
     fontSize: 12,
