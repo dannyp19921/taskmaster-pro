@@ -5,8 +5,6 @@ import { View, StyleSheet } from 'react-native';
 import { Input } from '../../../components/Input';
 import { Button } from '../../../components/Button';
 import { Text } from '../../../components/Text';
-
-
 import { DatePicker } from '../../../components/DatePicker';
 import { PrioritySelector, Priority } from '../../../components/PrioritySelector';
 import { CategorySelector } from '../../../components/CategorySelector';
@@ -44,7 +42,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* 📝 Title Input */}
       <Input
         label="Tittel *"
         value={formData.title}
@@ -54,7 +51,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         testID={`${testID}-title`}
       />
 
-      {/* 📄 Description Input */}
       <Input
         label="Beskrivelse"
         value={formData.description}
@@ -65,7 +61,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         testID={`${testID}-description`}
       />
 
-      {/* 📅 Due Date Picker - Molecule! */}
       <DatePicker
         label="Forfallsdato *"
         value={formData.due_date}
@@ -77,21 +72,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         testID={`${testID}-due-date`}
       />
 
-      {/* ⚡ Priority Selection - Molecule! */}
       <PrioritySelector
         value={formData.priority}
         onPriorityChange={onFieldChange('priority') as (priority: Priority) => void}
         testID={`${testID}-priority`}
       />
 
-      {/* 🏷️ Category Selection - Molecule! */}
       <CategorySelector
         value={formData.category}
         onCategoryChange={onFieldChange('category')}
         testID={`${testID}-category`}
       />
 
-      {/* ✅ Completion Status (only for editing) */}
       {showCompletedStatus && onCompletedChange && (
         <View style={styles.section}>
           <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
@@ -102,9 +94,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             size="medium"
             onPress={() => onCompletedChange(!completed)}
             style={{
-              ...styles.statusButton,
-              backgroundColor: completed ? '#4CAF50' : 'transparent',
-              borderColor: '#4CAF50',
+              alignSelf: 'flex-start',
+              backgroundColor: completed ? theme.success : 'transparent',
+              borderColor: theme.success,
             }}
             testID={`${testID}-status`}
           >
@@ -113,12 +105,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         </View>
       )}
 
-      {/* 📊 Form Summary */}
-      <View style={{
-        ...styles.summaryCard,
-        backgroundColor: theme.cardBackground, 
-        borderColor: theme.border
-      }}>
+      <View style={[
+        styles.summaryCard,
+        {
+          backgroundColor: theme.cardBackground, 
+          borderColor: theme.border
+        }
+      ]}>
         <Text variant="subtitle2" color="primary" style={styles.summaryTitle}>
           📋 Oppsummering
         </Text>
