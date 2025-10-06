@@ -1,5 +1,4 @@
 // /src/components/CategorySelector.tsx
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from './Button';
@@ -10,7 +9,7 @@ interface CategorySelectorProps {
   label?: string;
   value: string;
   onCategoryChange: (category: string) => void;
-  options?: CategoryOption[]; // Allow custom categories
+  options?: CategoryOption[];
   disabled?: boolean;
   testID?: string;
 }
@@ -39,11 +38,13 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             size="small"
             onPress={() => onCategoryChange(category.value)}
             disabled={disabled}
-            style={{
-              ...styles.categoryButton,
-              borderColor: category.color,
-              backgroundColor: value === category.value ? category.color : 'transparent',
-            }}
+            style={[
+              styles.categoryButton,
+              {
+                borderColor: category.color,
+                backgroundColor: value === category.value ? category.color : 'transparent',
+              }
+            ]}
             testID={`${testID}-${category.value.toLowerCase()}`}
           >
             {category.label}
