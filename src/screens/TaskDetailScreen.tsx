@@ -83,11 +83,10 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       status: (completed ? 'completed' : 'open') as 'completed' | 'open',
     };
     
-    const success = await updateTask(taskId, updateData);
-
+    const result = await updateTask(taskId, updateData);
     setSaving(false);
 
-    if (success) {
+    if (result.success) {
       if (Platform.OS === 'web') {
         alert('Oppgaven ble lagret!');
         goBackToList();
@@ -98,15 +97,14 @@ export default function TaskDetailScreen({ navigation, route }: any) {
       }
     } else {
       if (Platform.OS === 'web') {
-        alert('Kunne ikke lagre endringer.');
+        alert(result.error || 'Kunne ikke lagre endringer.');
       } else {
-        Alert.alert('Feil', 'Kunne ikke lagre endringer.');
+        Alert.alert('Feil', result.error || 'Kunne ikke lagre endringer.');
       }
     }
   };
 
   const handleDeleteTask = async () => {
-    // Use window.confirm for web, Alert for native
     const confirmDelete = Platform.OS === 'web'
       ? window.confirm(`Vil du slette "${task?.title}"?`)
       : await new Promise<boolean>((resolve) => {
@@ -121,9 +119,15 @@ export default function TaskDetailScreen({ navigation, route }: any) {
         });
 
     if (confirmDelete) {
-      const success = await deleteTask(taskId);
-      if (success) {
+      const result = await deleteTask(taskId);
+      if (result.success) {
         goBackToList();
+      } else {
+        if (Platform.OS === 'web') {
+          alert(result.error || 'Kunne ikke slette oppgaven.');
+        } else {
+          Alert.alert('Feil', result.error || 'Kunne ikke slette oppgaven.');
+        }
       }
     }
   };

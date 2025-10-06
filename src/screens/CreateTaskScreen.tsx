@@ -1,6 +1,6 @@
 // /src/screens/CreateTaskScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 
 import { useTasks } from '../features/tasks/hooks/useTasks';
 import { CreateTaskDto } from '../features/tasks/types/task.types';
@@ -15,7 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function CreateTaskScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const { createTask, creating } = useTasks();
+  const { createTask } = useTasks();
 
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
@@ -26,6 +26,7 @@ export default function CreateTaskScreen({ navigation }: any) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const updateField = (field: keyof TaskFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -52,10 +53,18 @@ export default function CreateTaskScreen({ navigation }: any) {
       category: formData.category,
     };
 
-    const createdTask = await createTask(taskData);
+    setSubmitting(true);
+    const result = await createTask(taskData);
+    setSubmitting(false);
     
-    if (createdTask) {
-      navigation.navigate('TaskList');
+    if (result.success) {
+      Alert.alert(
+        'Suksess!', 
+        `Oppgaven "${result.task.title}" ble opprettet`,
+        [{ text: 'OK', onPress: () => navigation.navigate('TaskList') }]
+      );
+    } else {
+      Alert.alert('Feil', result.error);
     }
   };
 
@@ -63,14 +72,20 @@ export default function CreateTaskScreen({ navigation }: any) {
     const hasChanges = formData.title.trim() || formData.description.trim();
     
     if (hasChanges) {
-      Alert.alert(
-        'Avbryt opprettelse?',
-        'Du har ulagrede endringer. Er du sikker på at du vil avbryte?',
-        [
-          { text: 'Fortsett redigering', style: 'cancel' },
-          { text: 'Avbryt', style: 'destructive', onPress: () => navigation.goBack() }
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (window.confirm('Du har ulagrede endringer. Er du sikker på at du vil avbryte?')) {
+          navigation.goBack();
+        }
+      } else {
+        Alert.alert(
+          'Avbryt opprettelse?',
+          'Du har ulagrede endringer. Er du sikker på at du vil avbryte?',
+          [
+            { text: 'Fortsett redigering', style: 'cancel' },
+            { text: 'Avbryt', style: 'destructive', onPress: () => navigation.goBack() }
+          ]
+        );
+      }
     } else {
       navigation.goBack();
     }
@@ -112,11 +127,11 @@ export default function CreateTaskScreen({ navigation }: any) {
           variant="primary"
           size="large"
           onPress={handleSubmit}
-          disabled={creating}
+          disabled={submitting}
           style={styles.submitButton}
           testID="submit-button"
         >
-          {creating ? 'Oppretter...' : 'Opprett oppgave'}
+          {submitting ? 'Oppretter...' : 'Opprett oppgave'}
         </Button>
       </View>
     </View>

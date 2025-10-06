@@ -58,7 +58,6 @@ export default function TaskListScreen({ navigation }: any) {
   };
 
   const handleTaskDelete = async (taskId: string, taskTitle: string) => {
-    // Use window.confirm for web, Alert for native
     const confirmDelete = Platform.OS === 'web' 
       ? window.confirm(`Er du sikker på at du vil slette "${taskTitle}"?`)
       : await new Promise<boolean>((resolve) => {
@@ -73,9 +72,15 @@ export default function TaskListScreen({ navigation }: any) {
         });
 
     if (confirmDelete) {
-      const success = await deleteTask(taskId);
-      if (success) {
+      const result = await deleteTask(taskId);
+      if (result.success) {
         setSelectedTaskId(null);
+      } else {
+        if (Platform.OS === 'web') {
+          alert(result.error || 'Kunne ikke slette oppgaven.');
+        } else {
+          Alert.alert('Feil', result.error || 'Kunne ikke slette oppgaven.');
+        }
       }
     } else {
       setSelectedTaskId(null);
@@ -148,29 +153,6 @@ export default function TaskListScreen({ navigation }: any) {
     };
   };
 
-  const getFilterSummary = () => {
-    const parts = [];
-    
-    if (filter !== 'all') {
-      parts.push(filter === 'active' ? 'Aktive' : 'Fullført');
-    }
-    
-    if (categoryFilter !== 'all') {
-      const categoryInfo = getCategoryInfo(categoryFilter);
-      parts.push(categoryInfo.label);
-    }
-    
-    if (searchText.trim()) {
-      parts.push(`"${searchText}"`);
-    }
-    
-    if (sortBy !== 'date') {
-      parts.push(sortBy === 'priority' ? 'Etter prioritet' : 'Usortert');
-    }
-    
-    return parts.length > 0 ? parts.join(' • ') : 'Alle oppgaver';
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar 
@@ -214,7 +196,6 @@ export default function TaskListScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Filter and Search Bar */}
       <View style={[styles.filterBar, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
         <View style={styles.searchContainer}>
           <SearchBox
