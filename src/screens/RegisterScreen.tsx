@@ -1,6 +1,6 @@
 // /src/screens/RegisterScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../services/supabase';
 
 import { Button } from '../components/Button';
@@ -9,14 +9,40 @@ import { Text } from '../components/Text';
 import { Header } from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
 
+import { validateRegisterForm, type RegisterFormData } from '../shared/utils/validation';
+import { getAuthErrorMessage } from '../shared/utils/authErrors';
+import { showAlert } from '../shared/utils/platformAlert';
+
 interface RegisterScreenProps {
   navigation: any;
 }
 
+const getPasswordStrength = (password: string): { label: string; color: string } => {
+  if (!password) return { label: '', color: '' };
+  
+  if (password.length < 6) {
+    return { label: 'Svakt', color: '#F44336' };
+  }
+  
+  const hasLower = /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  
+  if (hasLower && hasUpper && hasNumber) {
+    return { label: 'Sterkt', color: '#4CAF50' };
+  }
+  
+  if (hasLower && hasUpper) {
+    return { label: 'Bra', color: '#4CAF50' };
+  }
+  
+  return { label: 'Middels', color: '#FF9800' };
+};
+
 export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const { theme } = useTheme();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -25,7 +51,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const updateField = (field: keyof typeof formData) => (value: string) => {
+  const updateField = (field: keyof RegisterFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     if (errors[field]) {
@@ -33,111 +59,44 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'E-post er påkrevd';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Ugyldig e-postformat';
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Passord er påkrevd';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Passord må være minst 6 tegn';
-    }
-
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Bekreft passord er påkrevd';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passordene stemmer ikke overens';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleRegister = async () => {
-    if (!validateForm()) {
-      Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
+    const validationErrors = validateRegisterForm(formData);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showAlert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
       return;
     }
 
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
       });
 
       if (error) {
-        let errorMessage = 'Registrering feilet';
-        if (error.message.includes('User already registered')) {
-          errorMessage = 'En bruker med denne e-posten eksisterer allerede';
-        } else if (error.message.includes('Password should be at least')) {
-          errorMessage = 'Passordet er for svakt';
-        } else if (error.message.includes('Invalid email')) {
-          errorMessage = 'Ugyldig e-postadresse';
-        }
-        
-        Alert.alert('Feil', errorMessage);
+        const errorMessage = getAuthErrorMessage(error);
+        showAlert('Feil', errorMessage);
         return;
       }
 
-      Alert.alert(
+      showAlert(
         'Registrering vellykket!',
         'Du kan nå logge inn med din nye konto.',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => navigation.navigate('Login')
-          }
-        ]
+        () => navigation.navigate('Login')
       );
       
     } catch (error) {
       console.error('Register error:', error);
-      Alert.alert('Feil', 'En uventet feil oppstod');
+      showAlert('Feil', getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNavigateToLogin = () => {
-    navigation.navigate('Login');
-  };
-
-  // Password strength indicator
-  const getPasswordStrength = (): { label: string; color: string } => {
-    const password = formData.password;
-    
-    if (!password) return { label: '', color: '' };
-    
-    if (password.length < 6) {
-      return { label: 'Svakt', color: '#F44336' };
-    }
-    
-    const hasLower = /[a-z]/.test(password);
-    const hasUpper = /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    
-    if (hasLower && hasUpper && hasNumber) {
-      return { label: 'Sterkt', color: '#4CAF50' };
-    }
-    
-    if (hasLower && hasUpper) {
-      return { label: 'Bra', color: '#4CAF50' };
-    }
-    
-    return { label: 'Middels', color: '#FF9800' };
-  };
-
-  const passwordStrength = getPasswordStrength();
+  const passwordStrength = getPasswordStrength(formData.password);
 
   return (
     <KeyboardAvoidingView 
@@ -223,7 +182,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
             <Button
               variant="secondary"
               size="medium"
-              onPress={handleNavigateToLogin}
+              onPress={() => navigation.navigate('Login')}
               disabled={loading}
               style={styles.loginButton}
               testID="navigate-to-login-button"

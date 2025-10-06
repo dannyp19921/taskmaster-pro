@@ -1,6 +1,6 @@
 // /src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../services/supabase';
 
 import { Button } from '../components/Button';
@@ -9,6 +9,10 @@ import { Text } from '../components/Text';
 import { Header } from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
 
+import { validateLoginForm, type LoginFormData } from '../shared/utils/validation';
+import { getAuthErrorMessage } from '../shared/utils/authErrors';
+import { showAlert } from '../shared/utils/platformAlert';
+
 interface LoginScreenProps {
   navigation: any;
 }
@@ -16,7 +20,7 @@ interface LoginScreenProps {
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const { theme } = useTheme();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
@@ -24,7 +28,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const updateField = (field: keyof typeof formData) => (value: string) => {
+  const updateField = (field: keyof LoginFormData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     if (errors[field]) {
@@ -32,56 +36,34 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'E-post er påkrevd';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Ugyldig e-postformat';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Passord er påkrevd';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Passord må være minst 6 tegn';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleLogin = async () => {
-    if (!validateForm()) {
-      Alert.alert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
+    const validationErrors = validateLoginForm(formData);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showAlert('Valideringsfeil', 'Vennligst rett opp feilene og prøv igjen');
       return;
     }
 
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password,
       });
 
       if (error) {
-        let errorMessage = 'Innlogging feilet';
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Ugyldig e-post eller passord';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'E-post ikke bekreftet. Sjekk innboksen din.';
-        }
-        
-        Alert.alert('Feil', errorMessage);
+        const errorMessage = getAuthErrorMessage(error);
+        showAlert('Feil', errorMessage);
         return;
       }
 
-      Alert.alert('Velkommen!', 'Du er nå logget inn');
+      showAlert('Velkommen!', 'Du er nå logget inn');
       
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Feil', 'En uventet feil oppstod');
+      showAlert('Feil', getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
