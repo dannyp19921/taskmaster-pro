@@ -1,6 +1,6 @@
 // /src/components/Button.tsx
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'info';
@@ -13,7 +13,7 @@ interface ButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
