@@ -1,6 +1,6 @@
 // /src/features/tasks/components/TaskCard.tsx
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, TextStyle } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 
 import { Text } from '../../../components/Text';
@@ -54,46 +54,45 @@ export default function TaskCard({
     return theme.success;
   };
 
+  const cardStyles = [
+    styles.card,
+    { 
+      backgroundColor: theme.cardBackground,
+      borderColor: theme.border,
+    },
+    isCompleted && { opacity: 0.7 },
+    !isCompleted && { 
+      borderLeftWidth: 4, 
+      borderLeftColor: getDeadlineColor() 
+    },
+  ];
+
+  const titleStyles: TextStyle[] = [
+    styles.title,
+    isCompleted && { 
+      textDecorationLine: 'line-through' as const,
+      color: theme.textTertiary 
+    }
+  ].filter(Boolean) as TextStyle[];
+
   return (
     <View style={styles.container} testID={testID}>
-      {/* Main Card */}
-      <View style={[
-        styles.card,
-        { 
-          backgroundColor: theme.cardBackground,
-          borderColor: theme.border,
-        },
-        isCompleted && { opacity: 0.7 },
-        !isCompleted && { 
-          borderLeftWidth: 4, 
-          borderLeftColor: getDeadlineColor() 
-        },
-      ]}>
-        
-        {/* Main Content Area */}
+      <View style={cardStyles}>
         <TouchableOpacity 
           onPress={onPress} 
           style={styles.content}
           testID={`${testID}-content`}
         >
-          {/* Title Row */}
           <View style={styles.titleRow}>
             <Text 
               variant="subtitle1" 
               color="primary"
               numberOfLines={2}
-              style={{
-                ...styles.title,
-                ...(isCompleted && { 
-                  textDecorationLine: 'line-through' as const,
-                  color: theme.textTertiary 
-                })
-              }}
+              style={StyleSheet.flatten(titleStyles)}
             >
               {task.title}
             </Text>
             
-            {/* Completion Indicator */}
             {isCompleted && (
               <Text variant="h6" style={{ color: theme.completed }}>
                 ✓
@@ -101,14 +100,12 @@ export default function TaskCard({
             )}
           </View>
           
-          {/* Category Badge */}
           <CategoryBadge 
             category={task.category} 
             size="small"
             testID={`${testID}-category`}
           />
           
-          {/* Status Information */}
           <TaskStatus
             dueDate={task.due_date}
             status={task.status}
@@ -118,7 +115,6 @@ export default function TaskCard({
           />
         </TouchableOpacity>
         
-        {/* Action Buttons */}
         <TaskActions
           isSelected={isSelected}
           onEdit={onEdit}

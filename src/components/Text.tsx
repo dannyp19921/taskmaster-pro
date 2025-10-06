@@ -1,6 +1,6 @@
 // /src/components/Text.tsx
 import React from 'react';
-import { Text as RNText, TextStyle } from 'react-native';
+import { Text as RNText, TextStyle, StyleProp } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 export type TextVariant = 
@@ -18,7 +18,7 @@ interface TextProps {
   weight?: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   italic?: boolean;
   numberOfLines?: number;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;  // ← endre fra TextStyle
   testID?: string;
 }
 
