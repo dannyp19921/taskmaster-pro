@@ -27,14 +27,6 @@ export const Calendar: React.FC<CalendarProps> = ({
   const { theme } = useTheme();
   const [currentDate, setCurrentDate] = useState(selectedDate);
 
-  // Date utilities
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const isDateDisabled = (date: Date): boolean => {
     if (minimumDate && date < minimumDate) return true;
     if (maximumDate && date > maximumDate) return true;
@@ -60,27 +52,33 @@ export const Calendar: React.FC<CalendarProps> = ({
     
     const days = [];
     
-    // Empty cells before month start
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(<View key={`empty-${i}`} style={styles.emptyDay} />);
     }
     
-    // Days in month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentYear, currentMonth, day);
       const isToday = date.toDateString() === today.toDateString();
       const isSelected = date.toDateString() === selectedDate.toDateString();
       const isDisabled = isDateDisabled(date);
       
+      const dayButtonStyles = [
+        styles.dayButton,
+        isToday && [styles.todayButton, { backgroundColor: theme.info }],
+        isSelected && [styles.selectedDayButton, { backgroundColor: theme.success }],
+        isDisabled && styles.disabledDayButton
+      ];
+
+      const dayTextColor = isDisabled 
+        ? theme.textTertiary 
+        : (isToday || isSelected) 
+          ? '#FFFFFF' 
+          : theme.textPrimary;
+
       days.push(
         <TouchableOpacity
           key={day}
-          style={{
-            ...styles.dayButton,
-            ...(isToday && { ...styles.todayButton, backgroundColor: '#007AFF' }),
-            ...(isSelected && { ...styles.selectedDayButton, backgroundColor: '#4CAF50' }),
-            ...(isDisabled && styles.disabledDayButton)
-          }}
+          style={dayButtonStyles}
           onPress={() => {
             if (!isDisabled) {
               onDateSelect(date);
@@ -91,11 +89,13 @@ export const Calendar: React.FC<CalendarProps> = ({
         >
           <Text 
             variant="body2"
-            style={{
-              ...styles.dayText,
-              color: isDisabled ? '#ccc' : (isToday || isSelected) ? '#fff' : theme.textPrimary,
-              fontWeight: (isToday || isSelected) ? '600' : 'normal'
-            }}
+            style={[
+              styles.dayText,
+              {
+                color: dayTextColor,
+                fontWeight: (isToday || isSelected) ? '600' : 'normal'
+              }
+            ]}
           >
             {day}
           </Text>
@@ -104,8 +104,7 @@ export const Calendar: React.FC<CalendarProps> = ({
     }
 
     return (
-      <View style={{ ...styles.calendarContainer, backgroundColor: theme.cardBackground }}>
-        {/* Header with navigation */}
+      <View style={[styles.calendarContainer, { backgroundColor: theme.cardBackground }]}>
         <View style={styles.calendarHeader}>
           <TouchableOpacity
             onPress={() => {
@@ -116,14 +115,14 @@ export const Calendar: React.FC<CalendarProps> = ({
             style={styles.navButton}
             testID={`${testID}-prev-month`}
           >
-            <Text variant="h3" style={{ ...styles.navButtonText, color: '#007AFF' }}>
+            <Text variant="h3" style={[styles.navButtonText, { color: theme.info }]}>
               ‹
             </Text>
           </TouchableOpacity>
           
           <Text 
             variant="h3" 
-            style={{ ...styles.monthYearText, color: theme.textPrimary }}
+            style={[styles.monthYearText, { color: theme.textPrimary }]}
           >
             {monthNames[currentMonth]} {currentYear}
           </Text>
@@ -137,13 +136,12 @@ export const Calendar: React.FC<CalendarProps> = ({
             style={styles.navButton}
             testID={`${testID}-next-month`}
           >
-            <Text variant="h3" style={{ ...styles.navButtonText, color: '#007AFF' }}>
+            <Text variant="h3" style={[styles.navButtonText, { color: theme.info }]}>
               ›
             </Text>
           </TouchableOpacity>
         </View>
         
-        {/* Week days header */}
         <View style={styles.weekDaysRow}>
           {weekDays.map(day => (
             <Text 
@@ -157,12 +155,10 @@ export const Calendar: React.FC<CalendarProps> = ({
           ))}
         </View>
         
-        {/* Calendar grid */}
         <View style={styles.calendarGrid}>
           {days}
         </View>
         
-        {/* Action buttons */}
         <View style={styles.calendarButtons}>
           <Button
             variant="secondary"
@@ -259,12 +255,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     margin: 1,
   },
-  todayButton: {
-    // backgroundColor set dynamically
-  },
-  selectedDayButton: {
-    // backgroundColor set dynamically
-  },
+  todayButton: {},
+  selectedDayButton: {},
   disabledDayButton: {
     opacity: 0.3,
   },
