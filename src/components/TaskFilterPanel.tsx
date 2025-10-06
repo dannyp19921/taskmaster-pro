@@ -7,7 +7,6 @@ import FilterButtons from './FilterButtons';
 import { useTheme } from '../context/ThemeContext';
 import { CATEGORY_OPTIONS } from '../shared/utils/categories';
 
-// Types for the panel
 interface FilterCounts {
   all: number;
   active: number;
@@ -15,26 +14,21 @@ interface FilterCounts {
 }
 
 interface TaskFilterPanelProps {
-  // Search
   searchText: string;
   onSearchChange: (text: string) => void;
   onSearchClear: () => void;
   
-  // Status filter  
   activeFilter: 'all' | 'active' | 'completed';
   onFilterChange: (filter: 'all' | 'active' | 'completed') => void;
   filterCounts: FilterCounts;
   
-  // Category filter
   categoryFilter: string;
   onCategoryChange: (category: string) => void;
   categoryCounts: Record<string, number>;
   
-  // Sort
   sortBy: 'date' | 'priority' | 'none';
   onSortChange: (sort: 'date' | 'priority' | 'none') => void;
   
-  // Clear all
   hasActiveFilters: boolean;
   onClearAll: () => void;
   
@@ -42,9 +36,6 @@ interface TaskFilterPanelProps {
 }
 
 export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
-  searchText,
-  onSearchChange,
-  onSearchClear,
   activeFilter,
   onFilterChange,
   filterCounts,
@@ -59,7 +50,6 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  // 🎨 Category Button - reusable within organism
   const CategoryButton = ({ category, isActive, onPress, count }: {
     category: { value: string; label: string; color: string };
     isActive: boolean;
@@ -70,17 +60,18 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
       variant={isActive ? 'primary' : 'secondary'}
       size="small"
       onPress={onPress}
-      style={{
-        marginRight: 8,
-        borderColor: category.color,
-        backgroundColor: isActive ? category.color : 'transparent'
-      }}
+      style={[
+        styles.categoryButton,
+        {
+          borderColor: category.color,
+          backgroundColor: isActive ? category.color : 'transparent'
+        }
+      ]}
     >
       {category.label} ({count})
     </Button>
   );
 
-  // 🔀 Sort Button - reusable within organism  
   const SortButton = ({ sort, label, icon }: { 
     sort: typeof sortBy; 
     label: string; 
@@ -97,14 +88,12 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* 🎛️ Status Filters */}
       <FilterButtons
         activeFilter={activeFilter}
         onFilterChange={onFilterChange}
         counts={filterCounts}
       />
 
-      {/* 🏷️ Category Filters */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text variant="subtitle2" color="primary">Kategori:</Text>
@@ -143,7 +132,6 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
         </ScrollView>
       </View>
 
-      {/* 🔀 Sort Options */}
       <View style={styles.section}>
         <Text variant="subtitle2" color="primary" style={styles.sectionTitle}>
           Sorter:
@@ -151,7 +139,7 @@ export const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
         <View style={styles.sortButtons}>
           <SortButton sort="date" label="Dato" icon="📅" />
           <SortButton sort="priority" label="Prioritet" icon="⚡" />
-          <SortButton sort="none" label="Standard" icon="📝" />
+          <SortButton sort="none" label="Standard" icon="📋" />
         </View>
       </View>
     </View>
@@ -173,6 +161,9 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     paddingHorizontal: 12,
+  },
+  categoryButton: {
+    marginRight: 8,
   },
   sectionTitle: { 
     marginBottom: 8,
