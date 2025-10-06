@@ -29,7 +29,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       case 'search': return '🔍';
       case 'filter': return '🎛️';
       case 'error': return '⚠️';
-      default: return '📝';
+      default: return '📋';
     }
   };
 
@@ -45,11 +45,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     <View style={styles.container} testID={testID}>
       <Text 
         variant="h1" 
-        style={{
-          fontSize: getIconSize(),
-          marginBottom: 16,
-          opacity: getIconOpacity(),
-        }}
+        style={[
+          styles.icon,
+          {
+            fontSize: getIconSize(),
+            opacity: getIconOpacity(),
+          }
+        ]}
       >
         {icon || getDefaultIcon()}
       </Text>
@@ -95,6 +97,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 40,
     paddingTop: 50,
+  },
+  icon: {
+    marginBottom: 16,
   },
   title: {
     marginBottom: 8,
