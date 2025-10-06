@@ -11,28 +11,31 @@ A modern task management application built with React Native and Expo, featuring
 - Dashboard with statistics
 - Dark/Light theme support
 - Cross-platform (Web, iOS, Android)
+- Over-the-air (OTA) updates via EAS
 
 ## Tech Stack
 
-- **Framework**: React Native with Expo
+- **Framework**: React Native with Expo SDK 54
 - **Language**: TypeScript
 - **Database**: Supabase (PostgreSQL)
 - **State Management**: React Hooks & Context API
 - **Navigation**: React Navigation
-- **UI**: Custom atomic design components
+- **Deployment**: EAS Build & EAS Update
+- **UI**: Custom component library with theming
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
+- Expo CLI
+- EAS CLI (`npm install -g eas-cli`)
 - Expo Go app (for mobile testing)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/taskmaster-pro.git
+git clone <repository-url>
 cd taskmaster-pro
 ```
 
@@ -42,11 +45,15 @@ npm install
 ```
 
 3. Set up environment variables:
-Create a `.env` file in the root directory (see Environment Variables section below)
+Create a `.env` file in the root directory:
+```
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
 4. Start the development server:
 ```bash
-npm start
+npx expo start
 ```
 
 5. Run on your preferred platform:
@@ -55,26 +62,32 @@ npm start
 - Press `i` for iOS simulator
 - Scan QR code with Expo Go app for physical device
 
-## Environment Variables
+## Building for Production
 
-**Note**: The Supabase credentials are currently hardcoded in `src/services/supabase.ts` for development purposes. For production, these should be moved to environment variables:
+### Android APK (Preview Build)
 
-```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```bash
+eas build --platform android --profile preview
 ```
 
-Then update `src/services/supabase.ts`:
-```typescript
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+This creates an installable APK for testing on Android devices.
+
+### Publishing Updates (OTA)
+
+After building your initial APK, you can push code updates instantly:
+
+```bash
+eas update --branch preview --message "Description of changes"
 ```
+
+Users will receive updates automatically on next app launch.
 
 ## Project Structure
 
 ```
 taskmaster-pro/
 ├── src/
+│   ├── components/        # Reusable UI components
 │   ├── context/          # React Context (Theme)
 │   ├── features/         # Feature modules
 │   │   └── tasks/        # Task-related logic
@@ -83,12 +96,11 @@ taskmaster-pro/
 │   │       └── types/
 │   ├── screens/          # Screen components
 │   ├── services/         # External services (Supabase)
-│   ├── shared/           # Shared utilities and UI
-│   │   ├── ui/          # UI components
-│   │   └── utils/       # Utility functions
-│   └── types/           # TypeScript types
+│   └── shared/           # Shared utilities
+│       └── utils/        # Utility functions
 ├── App.tsx              # Root component
-└── package.json
+├── .env                 # Environment variables (not in git)
+└── eas.json            # EAS Build configuration
 ```
 
 ## Database Schema
@@ -97,15 +109,16 @@ The application uses Supabase with the following main table:
 
 **tasks**
 - id (uuid, primary key)
-- title (text)
+- title (text, required)
 - description (text, optional)
-- due_date (date)
+- due_date (date, required)
 - priority (enum: Low, Medium, High)
 - category (text, optional)
 - status (enum: open, completed)
-- user_id (uuid, foreign key)
-- created_at (timestamp)
-- updated_at (timestamp)
+- user_id (uuid, foreign key to auth.users)
+- created_at (timestamp with time zone)
+
+**Note**: Row Level Security (RLS) is enabled to ensure users can only access their own tasks.
 
 ## Development
 
@@ -119,24 +132,54 @@ The application uses Supabase with the following main table:
 ### Code Style
 
 - TypeScript for type safety
-- Functional components with hooks
+- Functional components with React Hooks
 - Custom hooks for business logic
-- Atomic design for UI components
+- Separation of concerns (UI, business logic, services)
+- Theme-based styling for dark/light mode support
 
-## Security Notes
+## Architecture
 
-- The Supabase anon key in the code is safe for client-side use (it's designed to be public)
-- Row Level Security (RLS) is enabled on Supabase to protect user data
-- Always use environment variables for production deployments
+The application follows clean architecture principles:
+
+- **Presentation Layer**: React components and screens
+- **Business Logic**: Custom hooks (useTasks, useDashboardData, etc.)
+- **Data Layer**: Supabase service with type-safe queries
+- **Shared Utilities**: Validation, error handling, platform-specific helpers
+
+## Security
+
+- Environment variables for sensitive credentials
+- Supabase anon key is safe for client-side use (designed to be public)
+- Row Level Security (RLS) enabled on all database tables
+- User authentication required for all task operations
+- Type-safe queries prevent SQL injection
+
+## Testing
+
+The application has been tested on:
+- Web browsers (Chrome, Firefox, Safari)
+- Android devices (via EAS Build APK)
+- Expo Go (development testing)
+
+## Deployment
+
+### Web
+Deploy the web build to any static hosting service (Vercel, Netlify, etc.)
+
+### Mobile
+- Use EAS Build for creating production APKs/IPAs
+- Distribute Android APK directly or via Google Play Store
+- iOS requires Apple Developer Program ($99/year) for distribution
 
 ## Future Improvements
 
-- Add email verification flow
-- Implement push notifications
-- Add calendar integration
-- Implement task sharing/collaboration
-- Add recurring tasks
-- Implement data export functionality
+- iOS build and TestFlight distribution
+- Push notifications for task reminders
+- Calendar integration
+- Task sharing and collaboration
+- Recurring tasks
+- Data export functionality
+- Offline mode with sync
 
 ## License
 
@@ -144,4 +187,4 @@ This project is for portfolio purposes.
 
 ## Author
 
-Created as a portfolio project demonstrating full-stack development skills with React Native, TypeScript, and Supabase.
+Created as a portfolio project demonstrating full-stack development skills with React Native, TypeScript, Supabase, and modern mobile development practices.
