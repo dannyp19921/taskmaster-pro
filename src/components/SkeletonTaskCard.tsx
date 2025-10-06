@@ -1,7 +1,6 @@
 // /src/components/SkeletonTaskCard.tsx
-
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface SkeletonTaskCardProps {
@@ -14,7 +13,6 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
   const { theme } = useTheme();
   const shimmerAnimation = useRef(new Animated.Value(0)).current;
 
-  // 🌊 Shimmer animation effect
   useEffect(() => {
     const shimmer = () => {
       shimmerAnimation.setValue(0);
@@ -23,7 +21,7 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
         duration: 1500,
         useNativeDriver: true,
       }).start(() => {
-        shimmer(); // Loop the animation
+        shimmer();
       });
     };
     
@@ -34,13 +32,11 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
     };
   }, [shimmerAnimation]);
 
-  // 🎨 Shimmer opacity animation
   const shimmerOpacity = shimmerAnimation.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [0.3, 0.7, 0.3],
   });
 
-  // 🔘 Skeleton element component
   const SkeletonElement = ({ 
     width, 
     height, 
@@ -50,17 +46,19 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
     width: number | string; 
     height: number; 
     borderRadius?: number;
-    style?: any;
+    style?: ViewStyle;
   }) => (
     <Animated.View
-      style={{
-        width,
-        height,
-        backgroundColor: theme.border,
-        borderRadius,
-        opacity: shimmerOpacity,
-        ...style,
-      }}
+      style={[
+        {
+          width: width as any,
+          height,
+          backgroundColor: theme.border,
+          borderRadius,
+          opacity: shimmerOpacity,
+        },
+        style
+      ]}
     />
   );
 
@@ -74,13 +72,11 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
         }
       ]}>
         
-        {/* 📝 Title skeleton */}
         <View style={styles.titleRow}>
           <SkeletonElement width="70%" height={20} borderRadius={4} />
           <SkeletonElement width={30} height={30} borderRadius={15} />
         </View>
         
-        {/* 🏷️ Category badge skeleton */}
         <SkeletonElement 
           width={80} 
           height={24} 
@@ -88,13 +84,11 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
           style={styles.categoryBadge}
         />
         
-        {/* 📅 Date and status skeleton */}
         <View style={styles.statusRow}>
           <SkeletonElement width="45%" height={16} borderRadius={4} />
           <SkeletonElement width="35%" height={16} borderRadius={4} />
         </View>
         
-        {/* ⏰ Deadline message skeleton */}
         <SkeletonElement 
           width="60%" 
           height={14} 
@@ -102,7 +96,6 @@ export const SkeletonTaskCard: React.FC<SkeletonTaskCardProps> = ({
           style={styles.deadlineMessage}
         />
         
-        {/* 🎛️ Action buttons skeleton */}
         <View style={styles.actionsRow}>
           <SkeletonElement width={32} height={32} borderRadius={16} />
           <SkeletonElement width={32} height={32} borderRadius={16} />
