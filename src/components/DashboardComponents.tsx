@@ -1,11 +1,9 @@
 // /src/components/DashboardComponents.tsx
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
 import { useTheme } from '../context/ThemeContext';
 
-// 📊 StatCard Organism - Reusable statistics card
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -27,12 +25,14 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <View 
-      style={{
-        ...styles.statCard,
-        backgroundColor: theme.cardBackground,
-        borderLeftColor: color,
-        borderColor: theme.border,
-      }}
+      style={[
+        styles.statCard,
+        {
+          backgroundColor: theme.cardBackground,
+          borderLeftColor: color,
+          borderColor: theme.border,
+        }
+      ]}
       testID={testID}
     >
       <View style={styles.statHeader}>
@@ -55,7 +55,6 @@ export const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-// 📈 ProgressBar Organism - Visual progress indicator  
 interface ProgressBarProps {
   progress: number;
   color: string;
@@ -73,11 +72,13 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <View 
-      style={{
-        ...styles.progressSection,
-        backgroundColor: theme.cardBackground,
-        borderColor: theme.border,
-      }}
+      style={[
+        styles.progressSection,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.border,
+        }
+      ]}
       testID={testID}
     >
       {label && (
@@ -86,13 +87,15 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         </Text>
       )}
       <View style={styles.progressBarContainer}>
-        <View style={{ ...styles.progressBarBackground, backgroundColor: theme.border }}>
+        <View style={[styles.progressBarBackground, { backgroundColor: theme.border }]}>
           <View 
-            style={{
-              ...styles.progressBarFill,
-              width: `${Math.min(progress, 100)}%`,
-              backgroundColor: color
-            }} 
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${Math.min(progress, 100)}%`,
+                backgroundColor: color
+              }
+            ]} 
           />
         </View>
         <Text variant="subtitle2" color="primary" style={styles.progressText}>
@@ -103,7 +106,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   );
 };
 
-// 🏷️ CategoryList Organism - Category statistics display
 interface CategoryListProps {
   categories: Array<{ value: string; label: string; color: string; count: number }>;
   testID?: string;
@@ -124,14 +126,16 @@ export const CategoryList: React.FC<CategoryListProps> = ({
       {categories.map(cat => (
         <View 
           key={cat.value} 
-          style={{
-            ...styles.categoryItem,
-            backgroundColor: theme.cardBackground,
-            borderColor: theme.border,
-          }}
+          style={[
+            styles.categoryItem,
+            {
+              backgroundColor: theme.cardBackground,
+              borderColor: theme.border,
+            }
+          ]}
           testID={`${testID}-${cat.value}`}
         >
-          <View style={{ ...styles.categoryDot, backgroundColor: cat.color }} />
+          <View style={[styles.categoryDot, { backgroundColor: cat.color }]} />
           <Text variant="body1" color="primary" style={styles.categoryLabel}>
             {cat.label}
           </Text>
@@ -144,7 +148,6 @@ export const CategoryList: React.FC<CategoryListProps> = ({
   );
 };
 
-// ⚡ PriorityOverview Organism - Priority statistics display
 interface PriorityOverviewProps {
   highPriority: number;
   mediumPriority: number;
@@ -162,11 +165,13 @@ export const PriorityOverview: React.FC<PriorityOverviewProps> = ({
 
   return (
     <View 
-      style={{
-        ...styles.priorityContainer,
-        backgroundColor: theme.cardBackground,
-        borderColor: theme.border,
-      }}
+      style={[
+        styles.priorityContainer,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: theme.border,
+        }
+      ]}
       testID={testID}
     >
       <View style={styles.priorityItem}>
@@ -203,7 +208,6 @@ export const PriorityOverview: React.FC<PriorityOverviewProps> = ({
 };
 
 const styles = StyleSheet.create({
-  // StatCard styles
   statCard: {
     flex: 1,
     borderRadius: 12,
@@ -230,8 +234,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
-
-  // ProgressBar styles
   progressSection: {
     marginTop: 16,
     borderRadius: 12,
@@ -265,8 +267,6 @@ const styles = StyleSheet.create({
     minWidth: 40,
     textAlign: 'right',
   },
-
-  // CategoryList styles
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -294,8 +294,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontWeight: '600',
   },
-
-  // PriorityOverview styles
   priorityContainer: {
     borderRadius: 12,
     padding: 16,
