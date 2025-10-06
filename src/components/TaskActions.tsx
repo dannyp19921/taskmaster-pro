@@ -43,11 +43,9 @@ export const TaskActions: React.FC<TaskActionsProps> = ({
         <Button
           variant="secondary"
           size="medium"
-          onPress={() => {
-            onDelete();
-          }}
+          onPress={onDelete}
           disabled={disabled}
-          style={{ ...styles.deleteButton, backgroundColor: theme.error }}
+          style={[styles.deleteButton, { backgroundColor: theme.error }]}
           testID={`${testID}-delete`}
         >
           <Text variant="button" style={styles.deleteButtonText}>
@@ -65,11 +63,13 @@ export const TaskActions: React.FC<TaskActionsProps> = ({
         size="small"
         onPress={onToggleSelect}
         disabled={disabled}
-        style={{
-          ...styles.toggleButton,
-          backgroundColor: isDarkMode ? '#4a4a4a' : '#f0f0f0',
-          borderColor: theme.border,
-        }}
+        style={[
+          styles.toggleButton,
+          {
+            backgroundColor: isDarkMode ? theme.cardBackground : theme.background,
+            borderColor: theme.border,
+          }
+        ]}
         testID={`${testID}-toggle`}
       >
         <Text variant="button" style={{ color: theme.textTertiary, fontSize: 12 }}>
@@ -85,7 +85,7 @@ export const TaskActions: React.FC<TaskActionsProps> = ({
         style={styles.editButton}
         testID={`${testID}-edit`}
       >
-        <Text variant="button" style={{ color: '#fff', fontSize: 12 }}>
+        <Text variant="button" style={{ color: '#FFFFFF', fontSize: 12 }}>
           ✏️
         </Text>
       </Button>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   deleteButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 14,
   },
