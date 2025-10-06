@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 
 interface DatePickerProps {
   label?: string;
-  value: string; // ISO date string (YYYY-MM-DD)
+  value: string;
   onDateChange: (date: string) => void;
   error?: string;
   hint?: string;
@@ -33,16 +33,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const { theme } = useTheme();
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Convert ISO string (YYYY-MM-DD) to Date object
   const getDateFromValue = (): Date => {
     if (value) {
-      const date = new Date(value + 'T12:00:00'); // Add time to avoid timezone issues
+      const date = new Date(value + 'T12:00:00');
       return isNaN(date.getTime()) ? new Date() : date;
     }
     return new Date();
   };
 
-  // Format date for display (Norwegian format)
   const formatDisplayDate = (dateString: string): string => {
     if (!dateString) return '';
     
@@ -50,7 +48,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return `${day}.${month}.${year}`;
   };
 
-  // Format date for ISO string (YYYY-MM-DD)
   const formatISODate = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -87,7 +84,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           styles.dateButton,
           {
             backgroundColor: disabled ? theme.background : theme.cardBackground,
-            borderColor: error ? '#F44336' : theme.border,
+            borderColor: error ? theme.error : theme.border,
             opacity: disabled ? 0.6 : 1,
           }
         ]}
@@ -113,7 +110,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {error && (
         <Text 
           variant="caption" 
-          style={{ ...styles.errorText, color: '#F44336' }}
+          style={[styles.errorText, { color: theme.error }]}
         >
           {error}
         </Text>
@@ -129,7 +126,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </Text>
       )}
 
-      {/* Calendar Modal */}
       <Calendar
         visible={showCalendar}
         selectedDate={getDateFromValue()}
