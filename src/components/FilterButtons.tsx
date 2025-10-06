@@ -43,24 +43,29 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
       </Text>
       
       <View style={styles.buttonContainer}>
-        {filterOptions.map(({ key, label, icon, count }) => (
-          <Button
-            key={key}
-            variant={activeFilter === key ? 'primary' : 'secondary'}
-            size="small"
-            onPress={() => onFilterChange(key)}
-            style={styles.filterButton}
-            testID={`filter-${key}`}
-          >
-            <Text 
-              variant="button" 
-              color={activeFilter === key ? '#FFFFFF' : 'primary'}
-              style={styles.buttonText}
+        {filterOptions.map(({ key, label, icon, count }) => {
+          const isActive = activeFilter === key;
+          return (
+            <Button
+              key={key}
+              variant={isActive ? 'primary' : 'secondary'}
+              size="small"
+              onPress={() => onFilterChange(key)}
+              style={styles.filterButton}
+              testID={`filter-${key}`}
             >
-              {icon} {label} ({count})
-            </Text>
-          </Button>
-        ))}
+              <Text 
+                variant="button" 
+                style={[
+                  styles.buttonText,
+                  { color: isActive ? '#FFFFFF' : undefined }
+                ]}
+              >
+                {icon} {label} ({count})
+              </Text>
+            </Button>
+          );
+        })}
       </View>
     </View>
   );
