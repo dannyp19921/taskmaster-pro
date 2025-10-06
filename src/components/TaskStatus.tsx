@@ -1,5 +1,4 @@
 // /src/components/TaskStatus.tsx
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
@@ -17,12 +16,10 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({
   dueDate,
   status,
   priority,
-  category,
   testID = "task-status",
 }) => {
   const { theme } = useTheme();
 
-  // 🔧 FORENKLET: Deadline calculations
   const getDeadlineInfo = () => {
     const today = new Date();
     const deadline = new Date(dueDate);
@@ -51,15 +48,14 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({
     }
   };
 
-  // 🎨 Priority styling
   const getPriorityInfo = () => {
     switch (priority) {
       case 'High':
-        return { icon: '🔴', color: '#F44336', label: 'Høy' };
+        return { icon: '🔴', color: theme.error, label: 'Høy' };
       case 'Medium':
-        return { icon: '🟡', color: '#FF9800', label: 'Medium' };
+        return { icon: '🟡', color: theme.warning, label: 'Medium' };
       case 'Low':
-        return { icon: '🟢', color: '#4CAF50', label: 'Lav' };
+        return { icon: '🟢', color: theme.success, label: 'Lav' };
       default:
         return { icon: '⚪', color: theme.textSecondary, label: 'Ukjent' };
     }
@@ -71,13 +67,11 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({
 
   return (
     <View style={styles.container} testID={testID}>
-      {/* 📅 Deadline Information */}
       <View style={styles.deadlineRow}>
         <Text variant="body2" color="secondary">
           📅 {dueDate}
         </Text>
         
-        {/* Deadline badge kun på aktive oppgaver */}
         {!isCompleted && deadlineInfo.badge && (
           <View style={[styles.deadlineBadge, { backgroundColor: deadlineInfo.color }]}>
             <Text variant="caption" style={styles.badgeText}>
@@ -87,7 +81,6 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({
         )}
       </View>
 
-      {/* ⚡ Priority & Status Row */}
       <View style={styles.statusRow}>
         <Text variant="body2" color="secondary">
           {priorityInfo.icon} {priorityInfo.label}
@@ -98,15 +91,16 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({
         </Text>
       </View>
 
-      {/* ⏰ Deadline message kun på aktive oppgaver */}
       {!isCompleted && (
         <Text 
           variant="caption" 
-          style={{ 
-            color: deadlineInfo.color, 
-            fontWeight: '600',
-            ...styles.deadlineMessage 
-          }}
+          style={[
+            styles.deadlineMessage,
+            { 
+              color: deadlineInfo.color, 
+              fontWeight: '600',
+            }
+          ]}
         >
           ⏰ {deadlineInfo.message}
         </Text>
@@ -130,7 +124,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
