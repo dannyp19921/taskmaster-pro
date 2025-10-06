@@ -1,5 +1,4 @@
-// /src/shared/utils/taskValidation.ts - Shared validation for task forms
-
+// /src/shared/utils/taskValidation.ts
 import { TaskFormData } from '../../features/tasks/components/TaskForm';
 
 export interface ValidationResult {
@@ -8,13 +7,12 @@ export interface ValidationResult {
 }
 
 /**
- * Validerer task form data
- * Brukes av både CreateTaskScreen og TaskDetailScreen
+ * Validates task form data
+ * Used by both CreateTaskScreen and TaskDetailScreen
  */
 export const validateTaskForm = (formData: TaskFormData): ValidationResult => {
   const errors: Record<string, string> = {};
 
-  // Title validation
   if (!formData.title.trim()) {
     errors.title = 'Tittel er påkrevd';
   } else if (formData.title.trim().length < 2) {
@@ -23,7 +21,6 @@ export const validateTaskForm = (formData: TaskFormData): ValidationResult => {
     errors.title = 'Tittel kan ikke være lengre enn 100 tegn';
   }
 
-  // Due date validation
   if (!formData.due_date) {
     errors.due_date = 'Forfallsdato er påkrevd';
   } else {
@@ -36,18 +33,15 @@ export const validateTaskForm = (formData: TaskFormData): ValidationResult => {
     }
   }
 
-  // Description validation (optional)
   if (formData.description && formData.description.length > 500) {
     errors.description = 'Beskrivelse kan ikke være lengre enn 500 tegn';
   }
 
-  // Priority validation
   const validPriorities = ['Low', 'Medium', 'High'];
   if (!validPriorities.includes(formData.priority)) {
     errors.priority = 'Ugyldig prioritet valgt';
   }
 
-  // Category validation
   if (!formData.category.trim()) {
     errors.category = 'Kategori er påkrevd';
   }
