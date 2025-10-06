@@ -37,12 +37,10 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        leftIcon="🔍"
         disabled={disabled}
         testID={testID}
       />
       
-      {/* Clear button - appears when user has typed something */}
       {value.length > 0 && (
         <TouchableOpacity 
           style={[styles.clearButton, { backgroundColor: theme.border }]} 
