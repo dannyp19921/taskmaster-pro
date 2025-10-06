@@ -1,7 +1,7 @@
 // /src/features/tasks/components/TaskCard.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, TextStyle } from 'react-native';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../../core/theme';
 
 import { Text } from '../../../components/Text';
 import { TaskStatus } from '../../../components/TaskStatus';

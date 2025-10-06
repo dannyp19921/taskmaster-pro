@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from './Text';
 import { Calendar } from './Calendar';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface DatePickerProps {
   label?: string;

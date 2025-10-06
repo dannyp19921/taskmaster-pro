@@ -1,26 +1,18 @@
 // App.tsx
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native'; 
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
-import { supabase } from './src/services/supabase';
+import { NavigationContainer } from '@react-navigation/native';
 
-import LoginScreen from './src/screens/LoginScreen'; 
-import RegisterScreen from './src/screens/RegisterScreen';
-import TaskListScreen from './src/screens/TaskListScreen';
-import CreateTaskScreen from './src/screens/CreateTaskScreen';
-import TaskDetailScreen from './src/screens/TaskDetailScreen';
-import DashboardScreen from './src/screens/DashboardScreen';
-import { ThemeProvider } from './src/context/ThemeContext';
-
-const Stack = createNativeStackNavigator();
+import { ThemeProvider } from './src/core/theme';
+import { supabase } from './src/core/api';
+import { AppNavigator } from './src/navigation';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     checkUserSession();
-    
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(session !== null);
     });
@@ -51,24 +43,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <NavigationContainer>
-        <Stack.Navigator 
-          initialRouteName={isLoggedIn ? "TaskList" : "Login"}
-          screenOptions={{ headerShown: false }}
-        >
-          {isLoggedIn ? (
-            <>
-              <Stack.Screen name="TaskList" component={TaskListScreen} />
-              <Stack.Screen name="CreateTask" component={CreateTaskScreen} />
-              <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
-              <Stack.Screen name="Dashboard" component={DashboardScreen} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-            </>
-          )}
-        </Stack.Navigator>
+        <AppNavigator isLoggedIn={isLoggedIn} />
       </NavigationContainer>
     </ThemeProvider>
   );

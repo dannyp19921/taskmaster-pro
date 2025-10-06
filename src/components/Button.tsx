@@ -1,7 +1,7 @@
 // /src/components/Button.tsx
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'info';
 export type ButtonSize = 'small' | 'medium' | 'large';

@@ -1,7 +1,7 @@
 // /src/features/tasks/hooks/useDashboardData.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { supabase } from '../../../services/supabase';
+import { supabase } from '../../../core/api/supabase';
 import { Task } from '../types/task.types';
 import { CATEGORY_OPTIONS } from '../../../shared/utils/categories';
 

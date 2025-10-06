@@ -1,4 +1,4 @@
-// /src/context/ThemeContext.tsx
+// src/core/theme/ThemeProvider.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -76,7 +76,7 @@ interface ThemeProviderProps {
 const THEME_STORAGE_KEY = '@taskmaster_theme_preference';
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark mode
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { Text } from './Text';
 import { Button } from './Button';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface CalendarProps {
   visible: boolean;

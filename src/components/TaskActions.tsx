@@ -3,7 +3,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button } from './Button';
 import { Text } from './Text';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface TaskActionsProps {
   isSelected: boolean;

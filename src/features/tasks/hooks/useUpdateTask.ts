@@ -1,7 +1,7 @@
 // /src/features/tasks/hooks/useUpdateTask.ts
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { supabase } from '../../../services/supabase';
+import { supabase } from '../../../core/api/supabase';
 import { UpdateTaskDto, Task } from '../types/task.types';
 
 interface UseUpdateTaskReturn {

@@ -14,7 +14,7 @@ import {
   PriorityOverview 
 } from '../components/DashboardComponents';
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface DashboardScreenProps {
   navigation: any;

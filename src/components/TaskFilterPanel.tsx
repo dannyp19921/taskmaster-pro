@@ -4,7 +4,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Button } from './Button';
 import { Text } from './Text';
 import FilterButtons from './FilterButtons';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 import { CATEGORY_OPTIONS } from '../shared/utils/categories';
 
 interface FilterCounts {

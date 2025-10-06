@@ -3,7 +3,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Input } from './Input';
 import { Text } from './Text';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface SearchBoxProps {
   value: string;

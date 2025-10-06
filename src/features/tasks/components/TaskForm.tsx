@@ -8,7 +8,7 @@ import { Text } from '../../../components/Text';
 import { DatePicker } from '../../../components/DatePicker';
 import { PrioritySelector, Priority } from '../../../components/PrioritySelector';
 import { CategorySelector } from '../../../components/CategorySelector';
-import { useTheme } from '../../../context/ThemeContext';
+import { useTheme } from '../../../core/theme';
 import { CATEGORY_OPTIONS } from '../../../shared/utils/categories';
 
 export interface TaskFormData {

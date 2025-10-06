@@ -11,7 +11,7 @@ import { Button } from '../components/Button';
 import { Header } from '../components/Header';
 import { TaskForm, TaskFormData } from '../features/tasks/components/TaskForm';
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 export default function CreateTaskScreen({ navigation }: any) {
   const { theme } = useTheme();

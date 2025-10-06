@@ -1,7 +1,7 @@
 // /src/components/ThemeToggle.tsx
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 export default function ThemeToggle() {
   const { theme, isDarkMode, toggleTheme } = useTheme();

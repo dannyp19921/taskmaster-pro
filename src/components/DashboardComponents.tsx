@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface StatCardProps {
   title: string;

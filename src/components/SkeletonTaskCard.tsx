@@ -1,7 +1,7 @@
 // /src/components/SkeletonTaskCard.tsx
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 interface SkeletonTaskCardProps {
   testID?: string;

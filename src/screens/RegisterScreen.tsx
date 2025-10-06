@@ -1,13 +1,13 @@
 // /src/screens/RegisterScreen.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { supabase } from '../services/supabase';
+import { supabase } from '../core/api/supabase';
 
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Text } from '../components/Text';
 import { Header } from '../components/Header';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 import { validateRegisterForm, type RegisterFormData } from '../shared/utils/validation';
 import { getAuthErrorMessage } from '../shared/utils/authErrors';

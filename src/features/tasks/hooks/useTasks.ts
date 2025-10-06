@@ -1,6 +1,6 @@
 // /src/features/tasks/hooks/useTasks.ts
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../../services/supabase';
+import { supabase } from '../../../core/api/supabase';
 import { Task, CreateTaskDto, UpdateTaskDto } from '../types/task.types';
 
 interface UseTasksReturn {

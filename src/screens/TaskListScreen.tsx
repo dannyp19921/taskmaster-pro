@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Alert, Platform, StatusBar, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { supabase } from '../services/supabase';
+import { supabase } from '../core/api/supabase';
 
 import { useTasks, useTaskFilters } from '../features/tasks';
 import TaskCard from '../features/tasks/components/TaskCard';
@@ -13,7 +13,7 @@ import SearchBox from '../components/SearchBox';
 import { Button } from '../components/Button';
 import { Text } from '../components/Text';
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 import { getCategoryInfo } from '../shared/utils/categories';
 
 export default function TaskListScreen({ navigation }: any) {

@@ -1,7 +1,7 @@
 // /src/components/Input.tsx
 import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../core/theme';
 
 export type InputVariant = 'default' | 'search' | 'textarea';
 export type InputSize = 'small' | 'medium' | 'large';
