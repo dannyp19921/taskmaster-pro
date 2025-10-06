@@ -1,5 +1,4 @@
 // /src/components/CategoryBadge.tsx
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
@@ -68,10 +67,10 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
     >
       <Text 
         variant="caption"
-        style={{
-          ...styles.badgeText,
-          fontSize: sizeStyles.fontSize,
-        }}
+        style={[
+          styles.badgeText,
+          { fontSize: sizeStyles.fontSize }
+        ]}
       >
         {categoryInfo.label}
       </Text>
